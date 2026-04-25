@@ -90,17 +90,21 @@ For GitHub Actions, consider using [`voidzero-dev/setup-vp`](https://github.com/
 ## Repo-Specific Notes
 
 ### Running Apps
+
 - Use `vp run <app>#<script>` to run app scripts (e.g., `vp run api#dev`)
 - Always run `vp run build` first to build workspace packages before running apps
 
 ### Workspace Packages
+
 - `packages/utils` - Shared utilities library
 - `apps/api` - Bun-based API server (uses Elysia)
 - `apps/scada` - Vite+ frontend app
 - Internal packages must use `workspace:*` version in dependencies
 
 ### Package tsconfig for Libraries
+
 Libraries consumed by other packages must have:
+
 ```json
 {
   "compilerOptions": {
@@ -111,19 +115,24 @@ Libraries consumed by other packages must have:
   }
 }
 ```
+
 And in `package.json`:
+
 ```json
 {
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts"
 }
 ```
+
 Exports must use `.js` extensions (not `.ts`) since TypeScript compiles to JS.
 
 ### Task Cache
+
 VP caches task results. After modifying tsconfig or source files, clear cache with `vp cache clear` or delete `dist` folders before rebuilding.
 
 ### Running Dev Servers
+
 Always use a timeout when running dev servers (e.g., `vp run api#dev`) to avoid getting stuck in a tool call. Example:
 
 ```

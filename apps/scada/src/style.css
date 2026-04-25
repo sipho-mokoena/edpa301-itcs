@@ -7,14 +7,31 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --clerk-color-primary: #008236;
+  --clerk-color-primary-foreground: #fafafa;
+  --clerk-color-danger: #e7000b;
+  --clerk-color-success: #22c543;
+  --clerk-color-warning: #f36b16;
+  --clerk-color-neutral: #0a0a0a;
+  --clerk-color-foreground: #0a0a0a;
+  --clerk-color-background: #ffffff;
+  --clerk-color-input: #e5e5e5;
+  --clerk-color-input-foreground: #0a0a0a;
+  --clerk-color-ring: #a1a1a1;
+  --clerk-color-shimmer: #ffffff;
+  --clerk-color-modal-backdrop: rgb(0 0 0 / 40%);
+  --clerk-border-radius: 0rem;
+  --clerk-spacing: 1rem;
+  --clerk-color-muted: #f5f5f5;
+  --clerk-color-muted-foreground: #737373;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.488 0.243 264.376);
-  --primary-foreground: oklch(0.97 0.014 254.604);
+  --primary: oklch(0.527 0.154 150.069);
+  --primary-foreground: oklch(0.982 0.018 155.826);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
@@ -25,16 +42,16 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
+  --chart-1: oklch(0.871 0.15 154.449);
+  --chart-2: oklch(0.723 0.219 149.579);
+  --chart-3: oklch(0.627 0.194 149.214);
+  --chart-4: oklch(0.527 0.154 150.069);
+  --chart-5: oklch(0.448 0.119 151.328);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.546 0.245 262.881);
-  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --sidebar-primary: oklch(0.627 0.194 149.214);
+  --sidebar-primary-foreground: oklch(0.982 0.018 155.826);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -42,14 +59,31 @@
 }
 
 .dark {
+  --clerk-color-primary: #008236;
+  --clerk-color-primary-foreground: #171717;
+  --clerk-color-danger: #ff6467;
+  --clerk-color-success: #22c543;
+  --clerk-color-warning: #f36b16;
+  --clerk-color-neutral: #fafafa;
+  --clerk-color-foreground: #fafafa;
+  --clerk-color-background: #171717;
+  --clerk-color-input: #ffffff;
+  --clerk-color-input-foreground: #fafafa;
+  --clerk-color-ring: #737373;
+  --clerk-color-shimmer: #ffffff;
+  --clerk-color-modal-backdrop: rgb(0 0 0 / 55%);
+  --clerk-border-radius: 0rem;
+  --clerk-spacing: 1rem;
+  --clerk-color-muted: #262626;
+  --clerk-color-muted-foreground: #a1a1a1;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.424 0.199 265.638);
-  --primary-foreground: oklch(0.97 0.014 254.604);
+  --primary: oklch(0.448 0.119 151.328);
+  --primary-foreground: oklch(0.982 0.018 155.826);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -60,15 +94,15 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
+  --chart-1: oklch(0.871 0.15 154.449);
+  --chart-2: oklch(0.723 0.219 149.579);
+  --chart-3: oklch(0.627 0.194 149.214);
+  --chart-4: oklch(0.527 0.154 150.069);
+  --chart-5: oklch(0.448 0.119 151.328);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.623 0.214 259.815);
-  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --sidebar-primary: oklch(0.723 0.219 149.579);
+  --sidebar-primary-foreground: oklch(0.982 0.018 155.826);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -139,21 +173,20 @@
   h6 {
     @apply font-heading;
   }
-
   h1 {
-    @apply text-4xl;
-  }
-  h2 {
-    @apply text-3xl;
-  }
-  h3 {
     @apply text-2xl;
   }
-  h4 {
+  h2 {
     @apply text-xl;
   }
-  h5 {
+  h3 {
     @apply text-lg;
+  }
+  h4 {
+    @apply text-base;
+  }
+  h5 {
+    @apply text-base;
   }
   h6 {
     @apply text-base;
@@ -161,4 +194,36 @@
   p {
     @apply text-base;
   }
+}
+
+.dockview-theme-vs,
+.dockview-theme-light {
+  --dv-border-radius: var(--radius);
+  --dv-tabs-and-actions-container-font-size: 0.8125rem;
+  --dv-tabs-and-actions-container-height: 2.25rem;
+  --dv-paneview-active-outline-color: var(--ring);
+  --dv-icon-hover-background-color: var(--accent);
+  --dv-tabs-container-scrollbar-color: var(--muted-foreground);
+  --dv-tab-divider-color: var(--border);
+  --dv-separator-border: var(--border);
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--ring);
+  --dv-floating-box-shadow: 0 4px 16px oklch(0 0 0 / 20%);
+  --dv-group-view-background-color: var(--background);
+  --dv-tabs-and-actions-container-background-color: var(--muted);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--primary);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--card);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--background);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--card);
+  --dv-activegroup-visiblepanel-tab-color: var(--primary-foreground);
+  --dv-activegroup-hiddenpanel-tab-color: var(--muted-foreground);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--muted-foreground);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--muted-foreground);
+  --dv-paneview-header-border-color: var(--border);
+}
+
+.dockview-theme-vs .dv-groupview:focus-within,
+.dockview-theme-light .dv-groupview:focus-within {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
 }

@@ -14,8 +14,7 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "~/": ["./src/*"],
-      "utils": ["./packages/utils/src"]
+      "~/*": ["./src/*"]
     },
     "noEmit": true,
     "types": ["vite/client"]

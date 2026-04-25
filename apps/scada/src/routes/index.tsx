@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+
 import { initLogger, log } from "utils";
-import "../style.css";
+import { Button } from "../components/ui/button";
 
 initLogger({ name: "scada" });
 
@@ -18,7 +19,7 @@ function Home() {
       <p>
         Count is <strong>{counter}</strong>
       </p>
-      <button
+      <Button
         type="button"
         onClick={() => {
           log.info("Counter clicked");
@@ -26,7 +27,7 @@ function Home() {
         }}
       >
         Click me
-      </button>
+      </Button>
     </div>
   );
 }

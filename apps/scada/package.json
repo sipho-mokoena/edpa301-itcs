@@ -1,5 +1,5 @@
 {
-  "name": "website",
+  "name": "scada",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,6 +7,9 @@
     "dev": "vp dev",
     "build": "tsc && vp build",
     "preview": "vp preview"
+  },
+  "dependencies": {
+    "utils": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~6.0.2",

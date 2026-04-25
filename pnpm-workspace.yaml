@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "tools/*"
+
+catalogs:
+  default:
+    vite: ^6.0.0
+    vite-plus: ^0.1.19

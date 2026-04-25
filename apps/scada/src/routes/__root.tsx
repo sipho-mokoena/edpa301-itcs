@@ -1,6 +1,7 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 
 import "../style.css";
+import ThemeProvider from "~/providers/theme";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -43,7 +44,9 @@ function RootComponent() {
         }}
       />
       <div id="app">
-        <Outlet />
+        <ThemeProvider>
+          <Outlet />
+        </ThemeProvider>
       </div>
       <Scripts />
     </>

@@ -67,7 +67,7 @@
   --clerk-color-neutral: #fafafa;
   --clerk-color-foreground: #fafafa;
   --clerk-color-background: #171717;
-  --clerk-color-input: #ffffff;
+  --clerk-color-input: #262626;
   --clerk-color-input-foreground: #fafafa;
   --clerk-color-ring: #737373;
   --clerk-color-shimmer: #ffffff;
@@ -194,10 +194,20 @@
   p {
     @apply text-base;
   }
+
+  /* the scrollbar needs styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--muted-foreground);
+    border-radius: var(--radius);
+  }
 }
 
-.dockview-theme-vs,
-.dockview-theme-light {
+.scada-dockview.dockview-theme-dark,
+.scada-dockview.dockview-theme-light {
   --dv-border-radius: var(--radius);
   --dv-tabs-and-actions-container-font-size: 0.8125rem;
   --dv-tabs-and-actions-container-height: 2.25rem;
@@ -209,7 +219,7 @@
   --dv-sash-color: transparent;
   --dv-active-sash-color: var(--ring);
   --dv-floating-box-shadow: 0 4px 16px oklch(0 0 0 / 20%);
-  --dv-group-view-background-color: var(--background);
+  --dv-group-view-background-color: var(--card);
   --dv-tabs-and-actions-container-background-color: var(--muted);
   --dv-activegroup-visiblepanel-tab-background-color: var(--primary);
   --dv-activegroup-hiddenpanel-tab-background-color: var(--card);
@@ -222,8 +232,46 @@
   --dv-paneview-header-border-color: var(--border);
 }
 
-.dockview-theme-vs .dv-groupview:focus-within,
-.dockview-theme-light .dv-groupview:focus-within {
+.scada-dockview.dockview-theme-light {
+  --dv-group-view-background-color: oklch(0.985 0 0);
+  --dv-tabs-and-actions-container-background-color: oklch(0.95 0 0);
+  --dv-activegroup-visiblepanel-tab-background-color: oklch(0.96 0.02 153);
+  --dv-activegroup-visiblepanel-tab-color: oklch(0.21 0.01 153);
+  --dv-activegroup-hiddenpanel-tab-color: oklch(0.45 0 0);
+  --dv-inactivegroup-visiblepanel-tab-color: oklch(0.45 0 0);
+  --dv-inactivegroup-hiddenpanel-tab-color: oklch(0.45 0 0);
+}
+
+.scada-dockview.dockview-theme-dark {
+  --dv-group-view-background-color: oklch(0.11 0 0);
+  --dv-tabs-and-actions-container-background-color: oklch(0.18 0 0);
+}
+
+.scada-dockview.dockview-theme-dark .dv-groupview:focus-within,
+.scada-dockview.dockview-theme-light .dv-groupview:focus-within {
   outline: 1px solid var(--ring);
   outline-offset: -1px;
+}
+.dv-pane-header {
+  @apply flex items-center;
+}
+
+.dv-default-header {
+  @apply text-xs font-medium;
+}
+
+.scada-scene-grid {
+  background-size: 32px 32px;
+}
+
+.scada-dockview.dockview-theme-dark .scada-scene-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 12%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 12%) 1px, transparent 1px);
+}
+
+.scada-dockview.dockview-theme-light .scada-scene-grid {
+  background-image:
+    linear-gradient(rgb(15 23 42 / 10%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(15 23 42 / 10%) 1px, transparent 1px);
 }

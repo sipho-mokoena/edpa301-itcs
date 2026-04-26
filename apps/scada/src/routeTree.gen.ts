@@ -8,98 +8,116 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SettingsRouteImport } from "./routes/settings";
+import { Route as CloudRouteImport } from "./routes/cloud";
+import { Route as AuthRouteImport } from "./routes/auth";
+import { Route as IndexRouteImport } from "./routes/index";
 
 const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const CloudRoute = CloudRouteImport.update({
+  id: "/cloud",
+  path: "/cloud",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+  id: "/auth",
+  path: "/auth",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
-  '/settings': typeof SettingsRoute
+  "/": typeof IndexRoute;
+  "/auth": typeof AuthRoute;
+  "/cloud": typeof CloudRoute;
+  "/settings": typeof SettingsRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
-  '/settings': typeof SettingsRoute
+  "/": typeof IndexRoute;
+  "/auth": typeof AuthRoute;
+  "/cloud": typeof CloudRoute;
+  "/settings": typeof SettingsRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
-  '/settings': typeof SettingsRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/auth": typeof AuthRoute;
+  "/cloud": typeof CloudRoute;
+  "/settings": typeof SettingsRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/settings'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/settings'
-  id: '__root__' | '/' | '/auth' | '/settings'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: "/" | "/auth" | "/cloud" | "/settings";
+  fileRoutesByTo: FileRoutesByTo;
+  to: "/" | "/auth" | "/cloud" | "/settings";
+  id: "__root__" | "/" | "/auth" | "/cloud" | "/settings";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRoute
-  SettingsRoute: typeof SettingsRoute
+  IndexRoute: typeof IndexRoute;
+  AuthRoute: typeof AuthRoute;
+  CloudRoute: typeof CloudRoute;
+  SettingsRoute: typeof SettingsRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/settings": {
+      id: "/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof SettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/cloud": {
+      id: "/cloud";
+      path: "/cloud";
+      fullPath: "/cloud";
+      preLoaderRoute: typeof CloudRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/auth": {
+      id: "/auth";
+      path: "/auth";
+      fullPath: "/auth";
+      preLoaderRoute: typeof AuthRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CloudRoute: CloudRoute,
   SettingsRoute: SettingsRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
+import type { getRouter } from "./router.tsx";
+import type { startInstance } from "./start.ts";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
   }
 }

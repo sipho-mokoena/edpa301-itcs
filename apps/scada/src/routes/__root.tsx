@@ -8,15 +8,15 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { House, Moon, Settings, Sun } from "lucide-react";
+import { Cloud, LayoutDashboard, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useMemo, type ReactNode } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import ThemeProvider, { useTheme } from "~/providers/theme";
 
-import "../style.css";
 import "dockview-react/dist/styles/dockview.css";
+import "../style.css";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -42,9 +42,15 @@ export const Route = createRootRoute({
 const navItems = [
   {
     to: "/",
-    label: "Home",
-    icon: House,
+    label: "SCADA",
+    icon: LayoutDashboard,
     exact: true,
+  },
+  {
+    to: "/cloud",
+    label: "Cloud",
+    icon: Cloud,
+    exact: false,
   },
   {
     to: "/settings",
@@ -120,7 +126,7 @@ function AppShell() {
         <div className="flex min-h-dvh flex-col bg-background text-foreground">
           <SignedOutRedirect />
           <div className="flex flex-1 flex-col">
-            <main className="flex flex-1 items-center justify-center p-4">
+            <main className="flex flex-1 items-center justify-center p-4 h-full">
               <Outlet />
             </main>
           </div>
@@ -131,15 +137,16 @@ function AppShell() {
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <div className="flex h-dvh flex-col bg-background text-foreground">
         <SignedInRedirect />
         <header className="border-b border-border bg-sidebar px-3 py-2 md:px-4">
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between gap-2">
             <img
               src={isDarkTheme ? "/dut-logo-dark.png" : "/dut-logo-light.png"}
               alt="Logo"
-              className="mr-auto h-6 w-16"
+              className="h-6 w-16"
             />
+            <span className="text-sm font-semibold">EDPA301 GRP17</span>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -151,13 +158,12 @@ function AppShell() {
               >
                 {isDarkTheme ? <Sun /> : <Moon />}
               </Button>
-              <UserButton />
             </div>
           </div>
         </header>
-        <div className="grid flex-1 grid-cols-[4.45rem_1fr]">
+        <div className="grid min-h-0 flex-1 grid-cols-[4.45rem_1fr]">
           <aside className="border-r border-border bg-sidebar">
-            <nav className="flex flex-col items-center gap-2">
+            <nav className="h-full flex flex-col items-center gap-2">
               {navItems.map(({ to, label, icon: Icon, exact }) => {
                 const isActive = exact ? pathname === to : pathname.startsWith(to);
 
@@ -183,12 +189,16 @@ function AppShell() {
                   </Tooltip>
                 );
               })}
+              <div className="mt-auto mb-4">
+                <UserButton />
+              </div>
             </nav>
           </aside>
-          <div className="flex h-full min-h-0 flex-col">
-            <main className="flex-1">
+          <div className="flex min-h-0 flex-col">
+            <main className="min-h-0 flex-1 overflow-y-auto">
               <Outlet />
             </main>
+            <AppFooter />
           </div>
         </div>
       </div>

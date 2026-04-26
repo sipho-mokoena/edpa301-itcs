@@ -1,5 +1,5 @@
 {
-  "name": "scada",
+  "name": "itcs-scada",
   "private": true,
   "type": "module",
   "sideEffects": false,

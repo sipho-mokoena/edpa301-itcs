@@ -19,13 +19,7 @@
   "scripts": {
     "ready": "vp check && vp run -r test && vp run -r build",
     "fmt": "vp fmt",
-    "build:packages": "vp run -r build --filter packages/*",
-    "build:apps": "vp run -r build --filter apps/*",
-    "build:tools": "vp run -r build --filter tools/*",
     "build": "vp run -r build",
-    "test:packages": "vp run -r test --filter packages/*",
-    "test:apps": "vp run -r test --filter apps/*",
-    "test:tools": "vp run -r test --filter tools/*",
     "test": "vp run -r test"
   },
   "dependencies": {

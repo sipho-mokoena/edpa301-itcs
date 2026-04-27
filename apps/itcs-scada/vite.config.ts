@@ -22,8 +22,8 @@ export default defineConfig({
     tanstackStart({
       srcDirectory: "src",
     }),
+    nitro({ preset: "vercel" }),
     viteReact(),
-    nitro(),
     tailwindcss(),
   ],
 });

@@ -494,7 +494,7 @@ export default function ScadaLayout() {
         serializableApi.fromJSON(dockviewLayout);
       } else {
         resetClosedPanels();
-        serializableApi.fromJSON?.(DEFAULT_LAYOUT);
+        serializableApi.fromJSON?.(DEFAULT_LAYOUT.state.dockviewLayout);
         persistDockviewLayout(api);
       }
 

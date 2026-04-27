@@ -23,6 +23,13 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       {
+        charSet: "utf-8",
+      },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      },
+      {
         name: "description",
         content: "Durban University of Technology ECE EDPA301 ITCS SCADA System",
       },
@@ -62,22 +69,27 @@ const navItems = [
 
 function RootComponent() {
   return (
-    <>
-      <HeadContent
-        assetCrossOrigin={{
-          modulepreload: "anonymous",
-          stylesheet: "use-credentials",
-        }}
-      />
-      <div id="app">
-        <ThemeProvider>
-          <ClerkThemeProvider>
-            <AppShell />
-          </ClerkThemeProvider>
-        </ThemeProvider>
-      </div>
-      <Scripts />
-    </>
+    <RootDocument>
+      <ThemeProvider>
+        <ClerkThemeProvider>
+          <AppShell />
+        </ClerkThemeProvider>
+      </ThemeProvider>
+    </RootDocument>
+  );
+}
+
+function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
   );
 }
 

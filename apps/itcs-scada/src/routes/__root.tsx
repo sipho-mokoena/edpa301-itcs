@@ -121,11 +121,7 @@ function ClerkThemeProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ClerkProvider
-      appearance={appearance}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-    >
+    <ClerkProvider appearance={appearance} signInUrl="/sign-in" signUpUrl="/sign-up">
       {children}
     </ClerkProvider>
   );

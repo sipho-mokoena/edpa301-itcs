@@ -8,114 +8,114 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as CloudRouteImport } from './routes/cloud'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
-import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SettingsRouteImport } from "./routes/settings";
+import { Route as CloudRouteImport } from "./routes/cloud";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as SignUpSplatRouteImport } from "./routes/sign-up.$";
+import { Route as SignInSplatRouteImport } from "./routes/sign-in.$";
 
 const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const CloudRoute = CloudRouteImport.update({
-  id: '/cloud',
-  path: '/cloud',
+  id: "/cloud",
+  path: "/cloud",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SignUpSplatRoute = SignUpSplatRouteImport.update({
-  id: '/sign-up/$',
-  path: '/sign-up/$',
+  id: "/sign-up/$",
+  path: "/sign-up/$",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SignInSplatRoute = SignInSplatRouteImport.update({
-  id: '/sign-in/$',
-  path: '/sign-in/$',
+  id: "/sign-in/$",
+  path: "/sign-in/$",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/cloud': typeof CloudRoute
-  '/settings': typeof SettingsRoute
-  '/sign-in/$': typeof SignInSplatRoute
-  '/sign-up/$': typeof SignUpSplatRoute
+  "/": typeof IndexRoute;
+  "/cloud": typeof CloudRoute;
+  "/settings": typeof SettingsRoute;
+  "/sign-in/$": typeof SignInSplatRoute;
+  "/sign-up/$": typeof SignUpSplatRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/cloud': typeof CloudRoute
-  '/settings': typeof SettingsRoute
-  '/sign-in/$': typeof SignInSplatRoute
-  '/sign-up/$': typeof SignUpSplatRoute
+  "/": typeof IndexRoute;
+  "/cloud": typeof CloudRoute;
+  "/settings": typeof SettingsRoute;
+  "/sign-in/$": typeof SignInSplatRoute;
+  "/sign-up/$": typeof SignUpSplatRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/cloud': typeof CloudRoute
-  '/settings': typeof SettingsRoute
-  '/sign-in/$': typeof SignInSplatRoute
-  '/sign-up/$': typeof SignUpSplatRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/cloud": typeof CloudRoute;
+  "/settings": typeof SettingsRoute;
+  "/sign-in/$": typeof SignInSplatRoute;
+  "/sign-up/$": typeof SignUpSplatRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
-  id: '__root__' | '/' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: "/" | "/cloud" | "/settings" | "/sign-in/$" | "/sign-up/$";
+  fileRoutesByTo: FileRoutesByTo;
+  to: "/" | "/cloud" | "/settings" | "/sign-in/$" | "/sign-up/$";
+  id: "__root__" | "/" | "/cloud" | "/settings" | "/sign-in/$" | "/sign-up/$";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  CloudRoute: typeof CloudRoute
-  SettingsRoute: typeof SettingsRoute
-  SignInSplatRoute: typeof SignInSplatRoute
-  SignUpSplatRoute: typeof SignUpSplatRoute
+  IndexRoute: typeof IndexRoute;
+  CloudRoute: typeof CloudRoute;
+  SettingsRoute: typeof SettingsRoute;
+  SignInSplatRoute: typeof SignInSplatRoute;
+  SignUpSplatRoute: typeof SignUpSplatRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cloud': {
-      id: '/cloud'
-      path: '/cloud'
-      fullPath: '/cloud'
-      preLoaderRoute: typeof CloudRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-up/$': {
-      id: '/sign-up/$'
-      path: '/sign-up/$'
-      fullPath: '/sign-up/$'
-      preLoaderRoute: typeof SignUpSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in/$': {
-      id: '/sign-in/$'
-      path: '/sign-in/$'
-      fullPath: '/sign-in/$'
-      preLoaderRoute: typeof SignInSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/settings": {
+      id: "/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof SettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/cloud": {
+      id: "/cloud";
+      path: "/cloud";
+      fullPath: "/cloud";
+      preLoaderRoute: typeof CloudRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/sign-up/$": {
+      id: "/sign-up/$";
+      path: "/sign-up/$";
+      fullPath: "/sign-up/$";
+      preLoaderRoute: typeof SignUpSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/sign-in/$": {
+      id: "/sign-in/$";
+      path: "/sign-in/$";
+      fullPath: "/sign-in/$";
+      preLoaderRoute: typeof SignInSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -125,17 +125,17 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
+import type { getRouter } from "./router.tsx";
+import type { startInstance } from "./start.ts";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
   }
 }

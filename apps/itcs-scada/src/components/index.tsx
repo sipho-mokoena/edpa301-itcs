@@ -368,93 +368,84 @@ const components = {
 };
 
 const DEFAULT_LAYOUT = {
-    "state": {
-        "theme": "dark",
-        "closedPanelIds": [
-            "camera-panel",
-            "power-panel"
-        ],
-        "dockviewLayout": {
-            "grid": {
-                "root": {
-                    "type": "branch",
-                    "data": [
-                        {
-                            "type": "leaf",
-                            "data": {
-                                "views": [
-                                    "scene-panel"
-                                ],
-                                "activeView": "scene-panel",
-                                "id": "1"
-                            },
-                            "size": 1320
-                        },
-                        {
-                            "type": "branch",
-                            "data": [
-                                {
-                                    "type": "leaf",
-                                    "data": {
-                                        "views": [
-                                            "status-panel"
-                                        ],
-                                        "activeView": "status-panel",
-                                        "id": "2"
-                                    },
-                                    "size": 445
-                                },
-                                {
-                                    "type": "leaf",
-                                    "data": {
-                                        "views": [
-                                            "controls-panel"
-                                        ],
-                                        "activeView": "controls-panel",
-                                        "id": "3"
-                                    },
-                                    "size": 445
-                                }
-                            ],
-                            "size": 529
-                        }
-                    ],
-                    "size": 890
-                },
-                "width": 1849,
-                "height": 890,
-                "orientation": "HORIZONTAL"
+  state: {
+    theme: "dark",
+    closedPanelIds: ["camera-panel", "power-panel"],
+    dockviewLayout: {
+      grid: {
+        root: {
+          type: "branch",
+          data: [
+            {
+              type: "leaf",
+              data: {
+                views: ["scene-panel"],
+                activeView: "scene-panel",
+                id: "1",
+              },
+              size: 1320,
             },
-            "panels": {
-                "scene-panel": {
-                    "id": "scene-panel",
-                    "contentComponent": "panel",
-                    "params": {
-                        "kind": "scene"
-                    },
-                    "title": "SITE01-ITCS-SCADA"
+            {
+              type: "branch",
+              data: [
+                {
+                  type: "leaf",
+                  data: {
+                    views: ["status-panel"],
+                    activeView: "status-panel",
+                    id: "2",
+                  },
+                  size: 445,
                 },
-                "status-panel": {
-                    "id": "status-panel",
-                    "contentComponent": "panel",
-                    "params": {
-                        "kind": "status"
-                    },
-                    "title": "SENSORS AND ACTUATORS"
+                {
+                  type: "leaf",
+                  data: {
+                    views: ["controls-panel"],
+                    activeView: "controls-panel",
+                    id: "3",
+                  },
+                  size: 445,
                 },
-                "controls-panel": {
-                    "id": "controls-panel",
-                    "contentComponent": "panel",
-                    "params": {
-                        "kind": "controls"
-                    },
-                    "title": "MANUAL CONTROLS"
-                }
+              ],
+              size: 529,
             },
-            "activeGroup": "2"
-        }
+          ],
+          size: 890,
+        },
+        width: 1849,
+        height: 890,
+        orientation: "HORIZONTAL",
+      },
+      panels: {
+        "scene-panel": {
+          id: "scene-panel",
+          contentComponent: "panel",
+          params: {
+            kind: "scene",
+          },
+          title: "SITE01-ITCS-SCADA",
+        },
+        "status-panel": {
+          id: "status-panel",
+          contentComponent: "panel",
+          params: {
+            kind: "status",
+          },
+          title: "SENSORS AND ACTUATORS",
+        },
+        "controls-panel": {
+          id: "controls-panel",
+          contentComponent: "panel",
+          params: {
+            kind: "controls",
+          },
+          title: "MANUAL CONTROLS",
+        },
+      },
+      activeGroup: "2",
     },
-    "version": 0
+  },
+  version: 0,
 };
 
 export default function ScadaLayout() {

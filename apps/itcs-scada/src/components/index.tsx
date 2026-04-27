@@ -17,6 +17,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import PowerSourceScadaSceneSvg, { PowerPath } from "~/components/graphics/power-source-scene";
+import LevelCrossingSceneSvg from "~/components/graphics/level-crossing-scene";
 import { useTheme } from "~/providers/theme";
 import { useScadaDataStore } from "~/stores/scada-data";
 import { useScadaUiStore } from "~/stores/scada-ui";
@@ -44,7 +45,7 @@ const PANEL_CONFIGS: PanelConfig[] = [
     component: "panel",
     params: { kind: "status" },
     position: {
-      direction: "below",
+      direction: "right",
       referencePanel: "scene-panel",
     },
   },
@@ -54,20 +55,9 @@ const PANEL_CONFIGS: PanelConfig[] = [
     component: "panel",
     params: { kind: "controls" },
     position: {
-      direction: "right",
+      direction: "below",
       referencePanel: "status-panel",
     },
-  },
-  {
-    id: "power-panel",
-    title: "POWER SUPPLY STATUS",
-    component: "panel",
-    params: { kind: "power" },
-    position: {
-      direction: "right",
-      referencePanel: "controls-panel",
-    },
-    minimumWidth: 320,
   },
 ];
 
@@ -79,12 +69,26 @@ const CAMERA_PANEL_CONFIG: PanelConfig = {
   floating: {
     width: 480,
     height: 320,
-    x: 1000,
-    y: 80,
+    x: 658,
+    y: 362,
   },
 };
 
-const ALL_PANEL_CONFIGS = [...PANEL_CONFIGS, CAMERA_PANEL_CONFIG];
+const POWER_PANEL_CONFIG: PanelConfig = {
+  id: "power-panel",
+  title: "POWER SUPPLY STATUS",
+  component: "panel",
+  params: { kind: "power" },
+  floating: {
+    width: 300,
+    height: 300,
+    x: 48,
+    y: 59,
+  },
+  minimumWidth: 320,
+};
+
+const ALL_PANEL_CONFIGS = [...PANEL_CONFIGS, CAMERA_PANEL_CONFIG, POWER_PANEL_CONFIG];
 
 function getToneBadgeVariant(tone: "ok" | "warn" | "danger" | "neutral") {
   if (tone === "ok") return "default" as const;
@@ -243,7 +247,7 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
   if (kind === "scene") {
     return (
       <div className="h-full w-full relative overflow-hidden">
-        <div className="scada-scene-grid absolute inset-0 h-full w-full" />
+        <LevelCrossingSceneSvg className="h-full w-full" />
       </div>
     );
   }
@@ -363,6 +367,96 @@ const components = {
   panel: Panel,
 };
 
+const DEFAULT_LAYOUT = {
+    "state": {
+        "theme": "dark",
+        "closedPanelIds": [
+            "camera-panel",
+            "power-panel"
+        ],
+        "dockviewLayout": {
+            "grid": {
+                "root": {
+                    "type": "branch",
+                    "data": [
+                        {
+                            "type": "leaf",
+                            "data": {
+                                "views": [
+                                    "scene-panel"
+                                ],
+                                "activeView": "scene-panel",
+                                "id": "1"
+                            },
+                            "size": 1320
+                        },
+                        {
+                            "type": "branch",
+                            "data": [
+                                {
+                                    "type": "leaf",
+                                    "data": {
+                                        "views": [
+                                            "status-panel"
+                                        ],
+                                        "activeView": "status-panel",
+                                        "id": "2"
+                                    },
+                                    "size": 445
+                                },
+                                {
+                                    "type": "leaf",
+                                    "data": {
+                                        "views": [
+                                            "controls-panel"
+                                        ],
+                                        "activeView": "controls-panel",
+                                        "id": "3"
+                                    },
+                                    "size": 445
+                                }
+                            ],
+                            "size": 529
+                        }
+                    ],
+                    "size": 890
+                },
+                "width": 1849,
+                "height": 890,
+                "orientation": "HORIZONTAL"
+            },
+            "panels": {
+                "scene-panel": {
+                    "id": "scene-panel",
+                    "contentComponent": "panel",
+                    "params": {
+                        "kind": "scene"
+                    },
+                    "title": "SITE01-ITCS-SCADA"
+                },
+                "status-panel": {
+                    "id": "status-panel",
+                    "contentComponent": "panel",
+                    "params": {
+                        "kind": "status"
+                    },
+                    "title": "SENSORS AND ACTUATORS"
+                },
+                "controls-panel": {
+                    "id": "controls-panel",
+                    "contentComponent": "panel",
+                    "params": {
+                        "kind": "controls"
+                    },
+                    "title": "MANUAL CONTROLS"
+                }
+            },
+            "activeGroup": "2"
+        }
+    },
+    "version": 0
+};
+
 export default function ScadaLayout() {
   const { theme } = useTheme();
   const dockviewTheme = theme === "dark" ? themeDark : themeLight;
@@ -400,12 +494,7 @@ export default function ScadaLayout() {
         serializableApi.fromJSON(dockviewLayout);
       } else {
         resetClosedPanels();
-
-        for (const config of PANEL_CONFIGS) {
-          api.addPanel(config);
-        }
-
-        api.addPanel(CAMERA_PANEL_CONFIG);
+        serializableApi.fromJSON?.(DEFAULT_LAYOUT);
         persistDockviewLayout(api);
       }
 

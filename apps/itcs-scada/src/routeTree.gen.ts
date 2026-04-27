@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as CloudRouteImport } from './routes/cloud'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
@@ -24,11 +23,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const CloudRoute = CloudRouteImport.update({
   id: '/cloud',
   path: '/cloud',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,7 +43,6 @@ const SignInSplatRoute = SignInSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
   '/cloud': typeof CloudRoute
   '/settings': typeof SettingsRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -57,7 +50,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
   '/cloud': typeof CloudRoute
   '/settings': typeof SettingsRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -66,7 +58,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
   '/cloud': typeof CloudRoute
   '/settings': typeof SettingsRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -74,28 +65,14 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/auth'
-    | '/cloud'
-    | '/settings'
-    | '/sign-in/$'
-    | '/sign-up/$'
+  fullPaths: '/' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
-  id:
-    | '__root__'
-    | '/'
-    | '/auth'
-    | '/cloud'
-    | '/settings'
-    | '/sign-in/$'
-    | '/sign-up/$'
+  to: '/' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
+  id: '__root__' | '/' | '/cloud' | '/settings' | '/sign-in/$' | '/sign-up/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRoute
   CloudRoute: typeof CloudRoute
   SettingsRoute: typeof SettingsRoute
   SignInSplatRoute: typeof SignInSplatRoute
@@ -116,13 +93,6 @@ declare module '@tanstack/react-router' {
       path: '/cloud'
       fullPath: '/cloud'
       preLoaderRoute: typeof CloudRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -151,7 +121,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthRoute: AuthRoute,
   CloudRoute: CloudRoute,
   SettingsRoute: SettingsRoute,
   SignInSplatRoute: SignInSplatRoute,

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/sign-up/$")({
 function SignUpPage() {
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-6">
-      <SignUp />
+      <SignUp signInUrl="/sign-in" />
     </div>
   );
 }

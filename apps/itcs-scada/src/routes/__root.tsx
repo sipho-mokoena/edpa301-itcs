@@ -108,7 +108,15 @@ function ClerkThemeProvider({ children }: { children: ReactNode }) {
     [theme],
   );
 
-  return <ClerkProvider appearance={appearance}>{children}</ClerkProvider>;
+  return (
+    <ClerkProvider
+      appearance={appearance}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    >
+      {children}
+    </ClerkProvider>
+  );
 }
 
 function AppShell() {
@@ -213,8 +221,8 @@ function SignedOutRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (pathname !== "/auth") {
-      void navigate({ to: "/auth", replace: true });
+    if (pathname !== "/sign-in" && pathname !== "/sign-up") {
+      void navigate({ to: "/sign-in/$", replace: true });
     }
   }, [navigate, pathname]);
 
@@ -228,7 +236,7 @@ function SignedInRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (pathname === "/auth") {
+    if (pathname === "/sign-in" || pathname === "/sign-up") {
       void navigate({ to: "/", replace: true });
     }
   }, [navigate, pathname]);

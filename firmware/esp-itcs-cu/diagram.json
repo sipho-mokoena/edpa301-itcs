@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "author": "Sipho Mokoena",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": -48,
+      "left": -110.36,
+      "attrs": { "fastTLS": "1" }
+    }
+  ],
+  "connections": [],
+  "dependencies": {}
+}

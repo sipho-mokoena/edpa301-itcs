@@ -13,6 +13,7 @@ import {
 } from "dockview-react";
 import { formatDateTimeZA } from "utils";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { publishCommand } from "~/lib/mqtt-client";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -203,6 +204,7 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
   const feed = cameraFeeds.find((cameraFeed) => cameraFeed.id === selectedFeedId) ?? null;
   const selectedPowerUnit = powerUnits.find((powerUnit) => powerUnit.siteId === selectedSiteId);
   const controls = useScadaDataStore((state) => state.controls);
+  const setCloudStatus = useScadaDataStore((state) => state.setCloudStatus);
   const { theme } = useTheme();
   const [cameraDateTime, setCameraDateTime] = useState(() => new Date());
   const [activePowerPath, setActivePowerPath] = useState<PowerPath>("mains");
@@ -350,6 +352,15 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
                       : "default"
                 }
                 className="w-full"
+                onClick={() => {
+                  const published = publishCommand(control.id);
+
+                  setCloudStatus({
+                    activeCommands: published ? 1 : 0,
+                    remoteOverride: control.label,
+                    syncStatus: published ? `Published ${control.id}` : "MQTT not connected",
+                  });
+                }}
               >
                 {control.label}
               </Button>

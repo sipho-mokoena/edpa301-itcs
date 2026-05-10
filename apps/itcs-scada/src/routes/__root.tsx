@@ -11,6 +11,7 @@ import {
 import { Cloud, LayoutDashboard, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useMemo, type ReactNode } from "react";
 
+import { startMqttClient, stopMqttClient } from "~/lib/mqtt-client";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import ThemeProvider, { useTheme } from "~/providers/theme";
@@ -135,6 +136,19 @@ function AppShell() {
   const { isSignedIn } = useAuth();
   const { theme, setTheme } = useTheme();
   const isDarkTheme = theme === "dark";
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      stopMqttClient();
+      return;
+    }
+
+    startMqttClient();
+
+    return () => {
+      stopMqttClient();
+    };
+  }, [isSignedIn]);
 
   if (!isSignedIn) {
     return (

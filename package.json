@@ -23,7 +23,7 @@
     "test": "vp run -r test"
   },
   "dependencies": {
-    "vite-plus": "^0.1.19"
+    "vite-plus": "^0.1.20"
   },
   "engines": {
     "node": ">=22.12.0"

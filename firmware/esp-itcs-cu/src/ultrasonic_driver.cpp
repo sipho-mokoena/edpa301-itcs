@@ -5,6 +5,7 @@
 namespace {
 constexpr int kSensorCount = 3;
 constexpr unsigned long kMinPulseDurationUs = 100;
+constexpr float kSpeedOfSoundFactor = 58.0f;
 
 int triggerPin = -1;
 int echoPins[kSensorCount] = {-1, -1, -1};
@@ -95,7 +96,7 @@ float getUltrasonicDriverDistanceCm(int sensorIndex) {
     return 0.0f;
   }
 
-  return latestTravelTimes[sensorIndex] / 58.0f;
+  return latestTravelTimes[sensorIndex] / kSpeedOfSoundFactor;
 }
 
 bool isUltrasonicDriverObstacleDetected(int sensorIndex, float maxDistanceCm) {

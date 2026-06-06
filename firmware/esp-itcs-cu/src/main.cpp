@@ -3,12 +3,9 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
 
-#include <cstring>
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "freertos/semphr.h"
-#include "freertos/task.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
 
 #include "ir_obstacle_driver.h"
 #include "servo_driver.h"
@@ -72,13 +69,16 @@ namespace
   constexpr uint32_t kGateCloseTimeoutMs = 7000;
   constexpr uint8_t kIrDebounceSamples = 3;
 
-  constexpr EventBits_t kEventTrainApproach = 1 << 0;
-  constexpr EventBits_t kEventTrainInside = 1 << 1;
-  constexpr EventBits_t kEventTrainLeaving = 1 << 2;
-  constexpr EventBits_t kEventTrainClear = 1 << 3;
-  constexpr EventBits_t kEventGateClosed = 1 << 4;
-  constexpr EventBits_t kEventFault = 1 << 5;
-  constexpr EventBits_t kEventRemoteOverride = 1 << 6;
+  constexpr uint32_t kWifiRetryIntervalMs = 2000;
+  constexpr uint32_t kMqttRetryIntervalMs = 2000;
+  constexpr uint32_t kUltrasonicTriggerIntervalMs = 100;
+  constexpr uint32_t kEchoWaitIntervalMs = 50;
+  constexpr uint32_t kWifiClientTimeoutMs = 2000;
+  constexpr size_t kAvailabilityPayloadSize = 192;
+  constexpr size_t kTelemetryDocSize = 256;
+  constexpr size_t kTelemetryPayloadSize = 320;
+  constexpr size_t kStateDocSize = 640;
+  constexpr size_t kStatePayloadSize = 768;
 
   enum class CrossingState : uint8_t
   {
@@ -149,7 +149,6 @@ namespace
   };
 
   SemaphoreHandle_t gStateMutex = nullptr;
-  EventGroupHandle_t gEvents = nullptr;
 
   SensorSnapshot gSensors = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   ActuatorState gActuators = {false, false, false, kGateOpenAngle, kGateOpenAngle, 0};
@@ -299,7 +298,7 @@ namespace
     }
 
     const uint32_t now = millis();
-    if (now - gLastWiFiRetryMs < 2000)
+    if (now - gLastWiFiRetryMs < kWifiRetryIntervalMs)
     {
       return;
     }
@@ -317,15 +316,15 @@ namespace
     }
 
     const uint32_t now = millis();
-    if (now - gLastMqttRetryMs < 2000)
+    if (now - gLastMqttRetryMs < kMqttRetryIntervalMs)
     {
       return;
     }
 
     gLastMqttRetryMs = now;
-    const String clientId = String("itcs-cu-") + String((uint32_t)ESP.getEfuseMac(), HEX);
+    const String clientId = String("itcs-cu-") + String(static_cast<uint32_t>(ESP.getEfuseMac()), HEX);
 
-    char offlinePayload[192];
+    char offlinePayload[kAvailabilityPayloadSize];
     if (!buildAvailabilityPayload("OFFLINE", offlinePayload, sizeof(offlinePayload)))
     {
       return;
@@ -345,7 +344,7 @@ namespace
       return;
     }
 
-    char onlinePayload[192];
+    char onlinePayload[kAvailabilityPayloadSize];
     if (buildAvailabilityPayload("ONLINE", onlinePayload, sizeof(onlinePayload)))
     {
       gMqttClient.publish(kAvailabilityTopic, onlinePayload, true);
@@ -402,7 +401,7 @@ namespace
 
   bool buildAvailabilityPayload(const char *status, char *payload, size_t payloadSize)
   {
-    StaticJsonDocument<192> doc;
+    StaticJsonDocument<kAvailabilityPayloadSize> doc;
     doc["siteId"] = kSiteId;
     doc["deviceId"] = kDeviceId;
     doc["status"] = status;
@@ -417,14 +416,14 @@ namespace
       return false;
     }
 
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<kTelemetryDocSize> doc;
     doc["siteId"] = kSiteId;
     doc["deviceId"] = kDeviceId;
     doc[elementType] = elementId;
     doc["status"] = status;
     doc["ts"] = millis();
 
-    char payload[320];
+    char payload[kTelemetryPayloadSize];
     if (!serializeJsonDocumentToBuffer(doc, payload, sizeof(payload)))
     {
       return false;
@@ -440,7 +439,7 @@ namespace
       return false;
     }
 
-    StaticJsonDocument<640> doc;
+    StaticJsonDocument<kStateDocSize> doc;
     doc["siteId"] = kSiteId;
     doc["deviceId"] = kDeviceId;
     doc["state"] = crossingStateToText(control.crossingState);
@@ -463,7 +462,7 @@ namespace
     actuatorsObj["nightLightEnabled"] = asBinary(actuators.nightLightEnabled);
     doc["ts"] = millis();
 
-    char payload[768];
+    char payload[kStatePayloadSize];
     if (!serializeJsonDocumentToBuffer(doc, payload, sizeof(payload)))
     {
       return false;
@@ -482,13 +481,13 @@ namespace
       updateServoFeedbackDriver();
 
       const uint32_t now = millis();
-      if (!gUltrasonicWaitingForEcho && (now - gLastUltrasonicTriggerMs >= 100))
+      if (!gUltrasonicWaitingForEcho && (now - gLastUltrasonicTriggerMs >= kUltrasonicTriggerIntervalMs))
       {
         updateUltrasonicDriver();
         gUltrasonicWaitingForEcho = true;
         gLastUltrasonicTriggerMs = now;
       }
-      else if (gUltrasonicWaitingForEcho && (now - gLastUltrasonicTriggerMs >= 50))
+      else if (gUltrasonicWaitingForEcho && (now - gLastUltrasonicTriggerMs >= kEchoWaitIntervalMs))
       {
         finalizeUltrasonicDriverMeasurement();
         gUltrasonicWaitingForEcho = false;
@@ -632,39 +631,6 @@ namespace
           gControl.faultActive = true;
           gControl.crossingState = CrossingState::fault;
         }
-
-        EventBits_t bits = 0;
-        if (approach)
-        {
-          bits |= kEventTrainApproach;
-        }
-        if (inside)
-        {
-          bits |= kEventTrainInside;
-        }
-        if (leaving)
-        {
-          bits |= kEventTrainLeaving;
-        }
-        if (!approach && !inside && !leaving)
-        {
-          bits |= kEventTrainClear;
-        }
-        if (gateClosedBySwitch)
-        {
-          bits |= kEventGateClosed;
-        }
-        if (gControl.faultActive)
-        {
-          bits |= kEventFault;
-        }
-        if (gControl.remoteGateMode != RemoteGateMode::autoMode || gControl.remoteWarningOverride != -1)
-        {
-          bits |= kEventRemoteOverride;
-        }
-
-        xEventGroupClearBits(gEvents, 0xFF);
-        xEventGroupSetBits(gEvents, bits);
 
         xSemaphoreGive(gStateMutex);
       }
@@ -856,13 +822,12 @@ void setup()
   digitalWrite(kNightLightPin, LOW);
 
   gStateMutex = xSemaphoreCreateMutex();
-  gEvents = xEventGroupCreate();
 
   gMqttClient.setServer(ITCS_MQTT_HOST, ITCS_MQTT_PORT);
   gMqttClient.setCallback(mqttCallback);
-  gMqttClient.setBufferSize(768);
+  gMqttClient.setBufferSize(kStatePayloadSize);
   gMqttClient.setKeepAlive(5);
-  gWiFiClient.setTimeout(2000);
+  gWiFiClient.setTimeout(kWifiClientTimeoutMs);
 
   xTaskCreatePinnedToCore(sensorTask, "sensorTask", 4096, nullptr, 3, nullptr, 1);
   xTaskCreatePinnedToCore(controlTask, "controlTask", 4096, nullptr, 4, nullptr, 1);

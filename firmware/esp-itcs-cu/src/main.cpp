@@ -16,10 +16,9 @@
 
 namespace
 {
-  constexpr char kSiteId[] = "DUT-ECE-ITCS-01";
-  constexpr char kDeviceId[] = "itcs-cu-01";
   constexpr char kTelemetryTopic[] = "itcs/cu/telemetry";
   constexpr char kCommandTopic[] = "itcs/cu/commands";
+  constexpr char kAckTopic[] = "itcs/cu/ack";
   constexpr char kStateTopic[] = "itcs/cu/state";
   constexpr char kAvailabilityTopic[] = "itcs/cu/availability";
 
@@ -232,6 +231,8 @@ namespace
       return;
     }
 
+    const char *command = nullptr;
+
     if (strcmp(buffer, "RESET_FAULT") == 0)
     {
       gControl.faultActive = false;
@@ -239,30 +240,48 @@ namespace
       {
         gControl.crossingState = CrossingState::idle;
       }
+      command = "RESET_FAULT";
     }
     else if (strcmp(buffer, "AUTO") == 0)
     {
       gControl.remoteGateMode = RemoteGateMode::autoMode;
       gControl.remoteWarningOverride = -1;
+      command = "AUTO";
     }
     else if (strcmp(buffer, "GATE_OPEN") == 0)
     {
       gControl.remoteGateMode = RemoteGateMode::forceOpen;
+      command = "GATE_OPEN";
     }
     else if (strcmp(buffer, "GATE_CLOSE") == 0)
     {
       gControl.remoteGateMode = RemoteGateMode::forceClosed;
+      command = "GATE_CLOSE";
     }
     else if (strcmp(buffer, "WARN_ON") == 0)
     {
       gControl.remoteWarningOverride = 1;
+      command = "WARN_ON";
     }
     else if (strcmp(buffer, "WARN_OFF") == 0)
     {
       gControl.remoteWarningOverride = 0;
+      command = "WARN_OFF";
     }
 
     xSemaphoreGive(gStateMutex);
+
+    if (command != nullptr)
+    {
+      StaticJsonDocument<64> doc;
+      doc["command"] = command;
+      doc["status"] = "ok";
+      char ackPayload[64];
+      if (serializeJson(doc, ackPayload, sizeof(ackPayload)) > 0)
+      {
+        gMqttClient.publish(kAckTopic, ackPayload, true);
+      }
+    }
   }
 
   void ensureWiFiConnected()
@@ -377,8 +396,6 @@ namespace
   bool buildAvailabilityPayload(const char *status, char *payload, size_t payloadSize)
   {
     StaticJsonDocument<kAvailabilityPayloadSize> doc;
-    doc["siteId"] = kSiteId;
-    doc["deviceId"] = kDeviceId;
     doc["status"] = status;
     doc["ts"] = millis();
     return serializeJsonDocumentToBuffer(doc, payload, payloadSize);
@@ -392,8 +409,6 @@ namespace
     }
 
     StaticJsonDocument<kTelemetryDocSize> doc;
-    doc["siteId"] = kSiteId;
-    doc["deviceId"] = kDeviceId;
     doc[elementType] = elementId;
     doc["status"] = status;
     doc["ts"] = millis();
@@ -415,8 +430,6 @@ namespace
     }
 
     StaticJsonDocument<kStateDocSize> doc;
-    doc["siteId"] = kSiteId;
-    doc["deviceId"] = kDeviceId;
     doc["state"] = crossingStateToText(control.crossingState);
     doc["fault"] = asBinary(control.faultActive);
 
@@ -690,72 +703,77 @@ namespace
         if (gPublished.irApproach != sensors.irApproach)
         {
           publishTelemetry("sensorId", "ir.train.approach", activeStateText(sensors.irApproach));
-          gPublished.irApproach = sensors.irApproach;
         }
         if (gPublished.irInside != sensors.irInside)
         {
           publishTelemetry("sensorId", "ir.train.inside", activeStateText(sensors.irInside));
-          gPublished.irInside = sensors.irInside;
         }
         if (gPublished.irLeaving != sensors.irLeaving)
         {
           publishTelemetry("sensorId", "ir.train.leaving", activeStateText(sensors.irLeaving));
-          gPublished.irLeaving = sensors.irLeaving;
         }
         if (gPublished.ldrDark != sensors.ldrDark)
         {
           publishTelemetry("sensorId", "ldr.camera.night", activeStateText(sensors.ldrDark));
-          gPublished.ldrDark = sensors.ldrDark;
         }
         if (gPublished.usSouth != sensors.usSouth)
         {
           publishTelemetry("sensorId", "ultrasonic.south.vehicle", activeStateText(sensors.usSouth));
-          gPublished.usSouth = sensors.usSouth;
         }
         if (gPublished.usIntersection != sensors.usIntersection)
         {
           publishTelemetry("sensorId", "ultrasonic.intersection.vehicle", activeStateText(sensors.usIntersection));
-          gPublished.usIntersection = sensors.usIntersection;
         }
         if (gPublished.usNorth != sensors.usNorth)
         {
           publishTelemetry("sensorId", "ultrasonic.north.vehicle", activeStateText(sensors.usNorth));
-          gPublished.usNorth = sensors.usNorth;
         }
         if (gPublished.limitSwitch1 != sensors.limitSwitch1)
         {
           publishTelemetry("sensorId", "limit.left.closed", activeStateText(sensors.limitSwitch1));
-          gPublished.limitSwitch1 = sensors.limitSwitch1;
         }
         if (gPublished.limitSwitch2 != sensors.limitSwitch2)
         {
           publishTelemetry("sensorId", "limit.right.closed", activeStateText(sensors.limitSwitch2));
-          gPublished.limitSwitch2 = sensors.limitSwitch2;
         }
         if (gPublished.warningsEnabled != actuators.warningsEnabled)
         {
           publishTelemetry("actuatorId", "warning.redLed", warningStateText(actuators.warningsEnabled));
           publishTelemetry("actuatorId", "warning.buzzer", warningStateText(actuators.warningsEnabled));
-          gPublished.warningsEnabled = actuators.warningsEnabled;
         }
         if (gPublished.nightLightEnabled != actuators.nightLightEnabled)
         {
           publishTelemetry("actuatorId", "light.camera.night", actuators.nightLightEnabled ? "ACTIVE" : "IDLE");
-          gPublished.nightLightEnabled = actuators.nightLightEnabled;
         }
         if (gPublished.gateClosed != actuators.gateClosed)
         {
           publishTelemetry("actuatorId", "gate.servo.left", gateStateText(actuators.gateClosed));
           publishTelemetry("actuatorId", "gate.servo.right", gateStateText(actuators.gateClosed));
-          gPublished.gateClosed = actuators.gateClosed;
         }
         if (gPublished.faultActive != control.faultActive)
         {
           publishTelemetry("actuatorId", "controller.fault", control.faultActive ? "FAULT" : "ACTIVE");
-          gPublished.faultActive = control.faultActive;
         }
 
         publishState(sensors, actuators, control);
+
+        if (xSemaphoreTake(gStateMutex, portMAX_DELAY) == pdTRUE)
+        {
+          gPublished.irApproach = sensors.irApproach;
+          gPublished.irInside = sensors.irInside;
+          gPublished.irLeaving = sensors.irLeaving;
+          gPublished.ldrDark = sensors.ldrDark;
+          gPublished.usSouth = sensors.usSouth;
+          gPublished.usIntersection = sensors.usIntersection;
+          gPublished.usNorth = sensors.usNorth;
+          gPublished.limitSwitch1 = sensors.limitSwitch1;
+          gPublished.limitSwitch2 = sensors.limitSwitch2;
+          gPublished.warningsEnabled = actuators.warningsEnabled;
+          gPublished.nightLightEnabled = actuators.nightLightEnabled;
+          gPublished.gateClosed = actuators.gateClosed;
+          gPublished.faultActive = control.faultActive;
+          xSemaphoreGive(gStateMutex);
+        }
       }
 
       Serial.printf(

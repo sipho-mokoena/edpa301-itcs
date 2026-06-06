@@ -11,9 +11,9 @@ import {
 import { Cloud, LayoutDashboard, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useMemo, type ReactNode } from "react";
 
-import { startMqttClient, stopMqttClient } from "~/lib/mqtt-client";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { startMqttClient, stopMqttClient } from "~/lib/mqtt-client";
 import ThemeProvider, { useTheme } from "~/providers/theme";
 
 import "dockview-react/dist/styles/dockview.css";
@@ -122,7 +122,11 @@ function ClerkThemeProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ClerkProvider appearance={appearance} signInUrl="/sign-in" signUpUrl="/sign-up">
+    <ClerkProvider
+      appearance={appearance}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    >
       {children}
     </ClerkProvider>
   );
@@ -144,7 +148,6 @@ function AppShell() {
     }
 
     startMqttClient();
-
     return () => {
       stopMqttClient();
     };

@@ -57,6 +57,7 @@ export type CameraFeedStatus = {
   label: string;
   cameraName: string;
   siteId: string;
+  endpointBaseUrl: string;
   online: boolean;
   lastHeartbeat: string;
 };
@@ -75,6 +76,21 @@ export type ControlAction = {
   tone: "primary" | "danger" | "neutral";
 };
 
+export type MqttConfig = {
+  brokerUrl: string;
+  clientId: string;
+  telemetryTopic: string;
+  commandTopic: string;
+  stateTopic: string;
+};
+
+export type MqttFeedMessage = {
+  id: string;
+  topic: string;
+  payload: string;
+  receivedAt: string;
+};
+
 type ScadaDataState = {
   sites: SiteSource[];
   processingUnits: ProcessingUnitSource[];
@@ -85,6 +101,8 @@ type ScadaDataState = {
   cameraFeeds: CameraFeedStatus[];
   cloud: CloudStatus;
   controls: ControlAction[];
+  mqtt: MqttConfig;
+  mqttFeed: MqttFeedMessage[];
   selectedSiteId: string | null;
   selectedProcessingUnitIds: string[];
   selectedSensorIds: string[];
@@ -100,10 +118,14 @@ type ScadaDataState = {
   setPowerStatus: (power: PowerStatus) => void;
   setCameraStatus: (id: string, updates: Partial<Omit<CameraFeedStatus, "id">>) => void;
   setCloudStatus: (updates: Partial<CloudStatus>) => void;
+  setMqttConfig: (updates: Partial<MqttConfig>) => void;
+  pushMqttFeedMessage: (message: Omit<MqttFeedMessage, "id" | "receivedAt">) => void;
+  clearMqttFeed: () => void;
 };
 
 const now = () => new Date().toISOString();
 const DATA_STORE_STORAGE_KEY = "scada-data-store";
+const MAX_MQTT_FEED_MESSAGES = 150;
 
 export const useScadaDataStore = create<ScadaDataState>()(
   persist(
@@ -274,6 +296,7 @@ export const useScadaDataStore = create<ScadaDataState>()(
           label: "Live Camera Feed",
           cameraName: "CAM 1",
           siteId: "DUT-ECE-ITCS-01",
+          endpointBaseUrl: "http://192.168.1.101",
           online: true,
           lastHeartbeat: now(),
         },
@@ -302,6 +325,14 @@ export const useScadaDataStore = create<ScadaDataState>()(
           tone: "neutral",
         },
       ],
+      mqtt: {
+        brokerUrl: "ws://localhost:8888",
+        clientId: `itcs-scada-${Math.random().toString(16).slice(2, 10)}`,
+        telemetryTopic: "itcs/cu/telemetry",
+        commandTopic: "itcs/cu/commands",
+        stateTopic: "itcs/cu/state",
+      },
+      mqttFeed: [],
       selectedSiteId: null,
       selectedProcessingUnitIds: [],
       selectedSensorIds: [],
@@ -485,6 +516,34 @@ export const useScadaDataStore = create<ScadaDataState>()(
           },
         }));
       },
+      setMqttConfig: (updates) => {
+        set((state) => ({
+          mqtt: {
+            ...state.mqtt,
+            ...updates,
+          },
+        }));
+      },
+      pushMqttFeedMessage: (message) => {
+        set((state) => {
+          const nextMessage: MqttFeedMessage = {
+            id: `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`,
+            topic: message.topic,
+            payload: message.payload,
+            receivedAt: now(),
+          };
+
+          const nextFeed = [nextMessage, ...state.mqttFeed];
+          if (nextFeed.length > MAX_MQTT_FEED_MESSAGES) {
+            nextFeed.length = MAX_MQTT_FEED_MESSAGES;
+          }
+
+          return { mqttFeed: nextFeed };
+        });
+      },
+      clearMqttFeed: () => {
+        set({ mqttFeed: [] });
+      },
     }),
     {
       name: DATA_STORE_STORAGE_KEY,
@@ -500,6 +559,8 @@ export const useScadaDataStore = create<ScadaDataState>()(
         cameraFeeds: state.cameraFeeds,
         cloud: state.cloud,
         controls: state.controls,
+        mqtt: state.mqtt,
+        mqttFeed: state.mqttFeed,
         selectedSiteId: state.selectedSiteId,
         selectedProcessingUnitIds: state.selectedProcessingUnitIds,
         selectedSensorIds: state.selectedSensorIds,

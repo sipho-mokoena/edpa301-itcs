@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_MQTT_CLIENT_ID?: string;
   readonly VITE_MQTT_TOPIC_TELEMETRY?: string;
   readonly VITE_MQTT_TOPIC_COMMANDS?: string;
+  readonly VITE_MQTT_TOPIC_STATE?: string;
 }
 
 interface ImportMeta {

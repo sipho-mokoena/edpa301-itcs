@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Card,
   CardAction,
@@ -19,6 +19,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { getMqttRuntimeConfig, restartMqttClient } from "~/lib/mqtt-client";
 import { useScadaDataStore } from "~/stores/scada-data";
 
 export const Route = createFileRoute("/cloud")({
@@ -78,6 +81,8 @@ function RouteComponent() {
   const selectedSensorIds = useScadaDataStore((state) => state.selectedSensorIds);
   const selectedActuatorIds = useScadaDataStore((state) => state.selectedActuatorIds);
   const selectedFeedId = useScadaDataStore((state) => state.selectedFeedId);
+  const mqtt = useScadaDataStore((state) => state.mqtt);
+  const cloud = useScadaDataStore((state) => state.cloud);
   const selectSite = useScadaDataStore((state) => state.selectSite);
   const toggleProcessingUnitSelection = useScadaDataStore(
     (state) => state.toggleProcessingUnitSelection,
@@ -85,6 +90,23 @@ function RouteComponent() {
   const toggleSensorSelection = useScadaDataStore((state) => state.toggleSensorSelection);
   const toggleActuatorSelection = useScadaDataStore((state) => state.toggleActuatorSelection);
   const setSelectedFeedId = useScadaDataStore((state) => state.setSelectedFeedId);
+  const setCameraStatus = useScadaDataStore((state) => state.setCameraStatus);
+  const setMqttConfig = useScadaDataStore((state) => state.setMqttConfig);
+  const setCloudStatus = useScadaDataStore((state) => state.setCloudStatus);
+
+  const [brokerUrlDraft, setBrokerUrlDraft] = useState(mqtt.brokerUrl);
+  const [clientIdDraft, setClientIdDraft] = useState(mqtt.clientId);
+  const [telemetryTopicDraft, setTelemetryTopicDraft] = useState(mqtt.telemetryTopic);
+  const [commandTopicDraft, setCommandTopicDraft] = useState(mqtt.commandTopic);
+  const [stateTopicDraft, setStateTopicDraft] = useState(mqtt.stateTopic);
+
+  useEffect(() => {
+    setBrokerUrlDraft(mqtt.brokerUrl);
+    setClientIdDraft(mqtt.clientId);
+    setTelemetryTopicDraft(mqtt.telemetryTopic);
+    setCommandTopicDraft(mqtt.commandTopic);
+    setStateTopicDraft(mqtt.stateTopic);
+  }, [mqtt]);
 
   const isSiteSelected = Boolean(selectedSiteId);
 
@@ -120,6 +142,11 @@ function RouteComponent() {
     : selectedFeedId
       ? "active"
       : "paused";
+  const mqttStatus: CloudStatus = cloud.apiConnectionTone === "ok"
+    ? "active"
+    : cloud.apiConnectionTone === "neutral"
+      ? "paused"
+      : "unavailable";
 
   const availableProcessingUnits = processingUnits.filter(
     (processingUnit) => processingUnit.siteId === selectedSiteId,
@@ -162,6 +189,57 @@ function RouteComponent() {
     (actuator) => !selectedActuatorIds.includes(actuator.id),
   );
   const unselectedFeeds = availableFeeds.filter((feed) => feed.id !== selectedFeedId);
+  const selectedFeed = availableFeeds.find((feed) => feed.id === selectedFeedId) ?? null;
+  const selectedCameraEndpoint = selectedFeed?.endpointBaseUrl ?? "";
+
+  const updateSelectedCameraEndpoint = (nextEndpointBaseUrl: string) => {
+    if (!selectedFeedId) {
+      return;
+    }
+
+    const trimmed = nextEndpointBaseUrl.trim();
+    setCameraStatus(selectedFeedId, {
+      endpointBaseUrl: trimmed,
+      online: trimmed.length > 0,
+      lastHeartbeat: new Date().toISOString(),
+    });
+  };
+  const runtimeConfig = getMqttRuntimeConfig();
+
+  const applyMqttConfiguration = () => {
+    const nextConfig = {
+      brokerUrl: brokerUrlDraft.trim(),
+      clientId: clientIdDraft.trim(),
+      telemetryTopic: telemetryTopicDraft.trim(),
+      commandTopic: commandTopicDraft.trim(),
+      stateTopic: stateTopicDraft.trim(),
+    };
+
+    if (!nextConfig.brokerUrl || !nextConfig.clientId) {
+      setCloudStatus({
+        syncStatus: "MQTT config requires broker URL and client ID",
+        apiConnection: "DEGRADED",
+        apiConnectionTone: "warn",
+      });
+      return;
+    }
+
+    setMqttConfig(nextConfig);
+    restartMqttClient();
+    setCloudStatus({
+      syncStatus: `MQTT config applied at ${new Date().toLocaleTimeString()}`,
+      apiConnection: "RECONNECTING",
+      apiConnectionTone: "warn",
+    });
+  };
+
+  const resetMqttConfiguration = () => {
+    setBrokerUrlDraft(runtimeConfig.brokerUrl);
+    setClientIdDraft(runtimeConfig.clientId);
+    setTelemetryTopicDraft(runtimeConfig.telemetryTopic);
+    setCommandTopicDraft(runtimeConfig.commandTopic);
+    setStateTopicDraft(runtimeConfig.stateTopic);
+  };
 
   return (
     <div className="w-full p-4">
@@ -488,13 +566,95 @@ function RouteComponent() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {selectedFeedLabel ? (
-              <Badge variant="secondary" className="w-fit">
-                {selectedFeedLabel.id}
+            <div className="grid gap-2">
+              {selectedFeedLabel ? (
+                <Badge variant="secondary" className="w-fit">
+                  {selectedFeedLabel.id}
+                </Badge>
+              ) : (
+                <p className="text-xs text-muted-foreground">No source selected.</p>
+              )}
+
+              <div className="grid gap-1">
+                <Label htmlFor="camera-endpoint">Camera Host / Base URL</Label>
+                <Input
+                  id="camera-endpoint"
+                  placeholder="192.168.4.1 or http://192.168.4.1"
+                  value={selectedCameraEndpoint}
+                  onChange={(event) => updateSelectedCameraEndpoint(event.currentTarget.value)}
+                  disabled={!selectedFeedId}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter camera IP/host once. SCADA will call `{'/stream'}` and `{'/capture'}` on that host.
+                </p>
+              </div>
+            </div>
+          </div>
+        </ConfigCard>
+
+        <ConfigCard
+          title="MQTT Configuration"
+          description="Configure broker connection and topics for telemetry and remote commands."
+          status={mqttStatus}
+        >
+          <div className="grid gap-3">
+            <div className="grid gap-1">
+              <Label htmlFor="mqtt-broker-url">Broker URL</Label>
+              <Input
+                id="mqtt-broker-url"
+                value={brokerUrlDraft}
+                onChange={(event) => setBrokerUrlDraft(event.currentTarget.value)}
+                placeholder="ws://localhost:8888"
+              />
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="mqtt-client-id">Client ID</Label>
+              <Input
+                id="mqtt-client-id"
+                value={clientIdDraft}
+                onChange={(event) => setClientIdDraft(event.currentTarget.value)}
+              />
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="mqtt-telemetry-topic">Telemetry Topic</Label>
+              <Input
+                id="mqtt-telemetry-topic"
+                value={telemetryTopicDraft}
+                onChange={(event) => setTelemetryTopicDraft(event.currentTarget.value)}
+              />
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="mqtt-command-topic">Commands Topic</Label>
+              <Input
+                id="mqtt-command-topic"
+                value={commandTopicDraft}
+                onChange={(event) => setCommandTopicDraft(event.currentTarget.value)}
+              />
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="mqtt-state-topic">State Topic</Label>
+              <Input
+                id="mqtt-state-topic"
+                value={stateTopicDraft}
+                onChange={(event) => setStateTopicDraft(event.currentTarget.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button type="button" onClick={applyMqttConfiguration}>
+                Apply and Reconnect
+              </Button>
+              <Button type="button" variant="outline" onClick={resetMqttConfiguration}>
+                Reset Draft
+              </Button>
+              <Badge variant="outline" className="max-w-full truncate">
+                Active: {runtimeConfig.brokerUrl}
               </Badge>
-            ) : (
-              <p className="text-xs text-muted-foreground">No source selected.</p>
-            )}
+            </div>
           </div>
         </ConfigCard>
       </div>

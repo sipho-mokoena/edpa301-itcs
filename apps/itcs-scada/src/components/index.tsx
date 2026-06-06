@@ -13,7 +13,6 @@ import {
 } from "dockview-react";
 import { formatDateTimeZA } from "utils";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { publishCommand } from "~/lib/mqtt-client";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -24,7 +23,7 @@ import { useScadaDataStore } from "~/stores/scada-data";
 import { useScadaUiStore } from "~/stores/scada-ui";
 
 type ScadaPanelParams = {
-  kind: "status" | "scene" | "power" | "controls" | "camera";
+  kind: "status" | "scene" | "power" | "controls" | "camera" | "telementry";
 };
 
 type PanelConfig = AddPanelOptions<ScadaPanelParams> & { title: string };
@@ -58,6 +57,16 @@ const PANEL_CONFIGS: PanelConfig[] = [
     position: {
       direction: "below",
       referencePanel: "status-panel",
+    },
+  },
+  {
+    id: "telementry-panel",
+    title: "TELEMENTRY FEED",
+    component: "panel",
+    params: { kind: "telementry" },
+    position: {
+      direction: "below",
+      referencePanel: "controls-panel",
     },
   },
 ];
@@ -96,6 +105,16 @@ function getToneBadgeVariant(tone: "ok" | "warn" | "danger" | "neutral") {
   if (tone === "warn") return "secondary" as const;
   if (tone === "danger") return "destructive" as const;
   return "outline" as const;
+}
+
+function normalizeBaseUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+  return withProtocol.replace(/\/+$/, "");
 }
 
 const StatusPane = (props: IPaneviewPanelProps<StatusPaneParams>) => {
@@ -204,7 +223,9 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
   const feed = cameraFeeds.find((cameraFeed) => cameraFeed.id === selectedFeedId) ?? null;
   const selectedPowerUnit = powerUnits.find((powerUnit) => powerUnit.siteId === selectedSiteId);
   const controls = useScadaDataStore((state) => state.controls);
-  const setCloudStatus = useScadaDataStore((state) => state.setCloudStatus);
+  const cloud = useScadaDataStore((state) => state.cloud);
+  const mqttFeed = useScadaDataStore((state) => state.mqttFeed);
+  const clearMqttFeed = useScadaDataStore((state) => state.clearMqttFeed);
   const { theme } = useTheme();
   const [cameraDateTime, setCameraDateTime] = useState(() => new Date());
   const [activePowerPath, setActivePowerPath] = useState<PowerPath>("mains");
@@ -263,25 +284,45 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
       );
     }
 
+    const endpointBaseUrl = normalizeBaseUrl(feed.endpointBaseUrl ?? "");
+    const streamUrl = endpointBaseUrl ? `${endpointBaseUrl}/stream` : "";
+    const captureUrl = endpointBaseUrl ? `${endpointBaseUrl}/capture` : "";
+    const isConfigured = endpointBaseUrl.length > 0;
+
     return (
       <div className="relative h-full w-full overflow-hidden bg-black text-neutral-100">
-        <video
-          key={feed.id}
-          className="absolute inset-0 h-full w-full object-cover"
-          src="/train-intersection-video.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
+        {isConfigured ? (
+          <img
+            key={`${feed.id}-${streamUrl}`}
+            className="absolute inset-0 h-full w-full object-cover"
+            src={streamUrl}
+            alt={`${feed.cameraName} live stream`}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-neutral-400">
+            Configure camera endpoint in Cloud Configuration.
+          </div>
+        )}
         <div className="absolute inset-x-0 top-0 z-10 bg-black/55 p-3 text-xs uppercase tracking-wide text-neutral-200">
           {feed.label} ({feed.cameraName})
         </div>
-        <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-black/55 p-3 text-xs text-neutral-200">
-          <span className={feed.online ? "text-emerald-400" : "text-rose-400"}>
-            {feed.online ? "ONLINE" : "OFFLINE"}
+        <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-2 bg-black/55 p-3 text-xs text-neutral-200">
+          <span className={isConfigured ? "text-emerald-400" : "text-rose-400"}>
+            {isConfigured ? "ENDPOINT CONFIGURED" : "NO ENDPOINT"}
           </span>
-          <span>{formatDateTimeZA(cameraDateTime)}</span>
+          <div className="flex items-center gap-2">
+            {captureUrl && (
+              <a
+                href={captureUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border border-neutral-500 px-2 py-1 hover:bg-white/10"
+              >
+                Capture JPG
+              </a>
+            )}
+            <span>{formatDateTimeZA(cameraDateTime)}</span>
+          </div>
         </div>
       </div>
     );
@@ -352,19 +393,67 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
                       : "default"
                 }
                 className="w-full"
-                onClick={() => {
-                  const published = publishCommand(control.id);
-
-                  setCloudStatus({
-                    activeCommands: published ? 1 : 0,
-                    remoteOverride: control.label,
-                    syncStatus: published ? `Published ${control.id}` : "MQTT not connected",
-                  });
-                }}
               >
                 {control.label}
               </Button>
             ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (kind === "telementry") {
+    return (
+      <div className="h-full w-full p-2">
+        <Card className="h-full border border-border/80 bg-card/90">
+          <CardContent className="flex h-full min-h-0 flex-col gap-3">
+            <div className="flex flex-col gap-2 border-b border-border/80 pb-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">MQTT Message Monitor</p>
+                <p className="text-xs text-muted-foreground">
+                  {mqttFeed.length} buffered message{mqttFeed.length === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={getToneBadgeVariant(cloud.apiConnectionTone)}>
+                  {cloud.apiConnection}
+                </Badge>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clearMqttFeed()}
+                  disabled={mqttFeed.length === 0}
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+
+            {mqttFeed.length === 0 ? (
+              <div className="flex min-h-0 flex-1 items-center rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+                Waiting for incoming ESP32 MQTT messages.
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+                {mqttFeed.map((message) => (
+                  <div key={message.id} className="rounded-md border border-border p-2 text-xs">
+                    <div className="mb-1 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <Badge variant="outline" className="max-w-full sm:max-w-[70%] truncate">
+                        {message.topic}
+                      </Badge>
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(message.receivedAt).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded bg-muted/40 p-2 font-mono text-[11px] leading-relaxed">
+                      {message.payload}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -379,84 +468,93 @@ const components = {
 };
 
 const DEFAULT_LAYOUT = {
-  state: {
-    theme: "dark",
-    closedPanelIds: ["camera-panel", "power-panel"],
-    dockviewLayout: {
-      grid: {
-        root: {
-          type: "branch",
-          data: [
-            {
-              type: "leaf",
-              data: {
-                views: ["scene-panel"],
-                activeView: "scene-panel",
-                id: "1",
-              },
-              size: 1320,
-            },
-            {
-              type: "branch",
-              data: [
-                {
-                  type: "leaf",
-                  data: {
-                    views: ["status-panel"],
-                    activeView: "status-panel",
-                    id: "2",
-                  },
-                  size: 445,
+    "state": {
+        "theme": "dark",
+        "closedPanelIds": [
+            "camera-panel",
+            "power-panel"
+        ],
+        "dockviewLayout": {
+            "grid": {
+                "root": {
+                    "type": "branch",
+                    "data": [
+                        {
+                            "type": "leaf",
+                            "data": {
+                                "views": [
+                                    "scene-panel"
+                                ],
+                                "activeView": "scene-panel",
+                                "id": "1"
+                            },
+                            "size": 1320
+                        },
+                        {
+                            "type": "branch",
+                            "data": [
+                                {
+                                    "type": "leaf",
+                                    "data": {
+                                        "views": [
+                                            "status-panel"
+                                        ],
+                                        "activeView": "status-panel",
+                                        "id": "2"
+                                    },
+                                    "size": 445
+                                },
+                                {
+                                    "type": "leaf",
+                                    "data": {
+                                        "views": [
+                                            "controls-panel"
+                                        ],
+                                        "activeView": "controls-panel",
+                                        "id": "3"
+                                    },
+                                    "size": 445
+                                }
+                            ],
+                            "size": 529
+                        }
+                    ],
+                    "size": 890
                 },
-                {
-                  type: "leaf",
-                  data: {
-                    views: ["controls-panel"],
-                    activeView: "controls-panel",
-                    id: "3",
-                  },
-                  size: 445,
-                },
-              ],
-              size: 529,
+                "width": 1849,
+                "height": 890,
+                "orientation": "HORIZONTAL"
             },
-          ],
-          size: 890,
-        },
-        width: 1849,
-        height: 890,
-        orientation: "HORIZONTAL",
-      },
-      panels: {
-        "scene-panel": {
-          id: "scene-panel",
-          contentComponent: "panel",
-          params: {
-            kind: "scene",
-          },
-          title: "SITE01-ITCS-SCADA",
-        },
-        "status-panel": {
-          id: "status-panel",
-          contentComponent: "panel",
-          params: {
-            kind: "status",
-          },
-          title: "SENSORS AND ACTUATORS",
-        },
-        "controls-panel": {
-          id: "controls-panel",
-          contentComponent: "panel",
-          params: {
-            kind: "controls",
-          },
-          title: "MANUAL CONTROLS",
-        },
-      },
-      activeGroup: "2",
+            "panels": {
+                "scene-panel": {
+                    "id": "scene-panel",
+                    "contentComponent": "panel",
+                    "params": {
+                        "kind": "scene"
+                    },
+                    "title": "SITE01-ITCS-SCADA"
+                },
+                "status-panel": {
+                    "id": "status-panel",
+                    "contentComponent": "panel",
+                    "params": {
+                        "kind": "status"
+                    },
+                    "title": "SENSORS AND ACTUATORS"
+                },
+                "controls-panel": {
+                    "id": "controls-panel",
+                    "contentComponent": "panel",
+                    "params": {
+                        "kind": "controls"
+                    },
+                    "title": "MANUAL CONTROLS"
+                }
+            },
+            "activeGroup": "2"
+        }
     },
-  },
-  version: 0,
+    "version": 0
 };
 
 export default function ScadaLayout() {
@@ -500,6 +598,13 @@ export default function ScadaLayout() {
         serializableApi.fromJSON?.(DEFAULT_LAYOUT.state.dockviewLayout);
         persistDockviewLayout(api);
       }
+
+      PANEL_CONFIGS.forEach((config) => {
+        const panelExists = api.panels.some((panel) => panel.id === config.id);
+        if (!panelExists) {
+          api.addPanel(config);
+        }
+      });
 
       serializableApi.onDidLayoutChange?.(() => {
         persistDockviewLayout(api);

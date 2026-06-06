@@ -165,6 +165,12 @@ namespace
   WiFiClient gWiFiClient;
   PubSubClient gMqttClient(gWiFiClient);
 
+  TaskHandle_t gSensorTaskHandle = nullptr;
+  TaskHandle_t gControlTaskHandle = nullptr;
+  TaskHandle_t gActuatorTaskHandle = nullptr;
+  TaskHandle_t gMqttTaskHandle = nullptr;
+  TaskHandle_t gTelemetryTaskHandle = nullptr;
+
   uint32_t gLastUltrasonicTriggerMs = 0;
   bool gUltrasonicWaitingForEcho = false;
   uint32_t gLastWiFiRetryMs = 0;
@@ -771,6 +777,14 @@ namespace
           WiFi.status() == WL_CONNECTED ? 1 : 0,
           gMqttClient.connected() ? 1 : 0);
 
+      Serial.printf(
+          "stack: sensor=%u ctrl=%u act=%u mqtt=%u tele=%u\n",
+          uxTaskGetStackHighWaterMark(gSensorTaskHandle),
+          uxTaskGetStackHighWaterMark(gControlTaskHandle),
+          uxTaskGetStackHighWaterMark(gActuatorTaskHandle),
+          uxTaskGetStackHighWaterMark(gMqttTaskHandle),
+          uxTaskGetStackHighWaterMark(gTelemetryTaskHandle));
+
       vTaskDelayUntil(&lastWake, kTelemetryTaskPeriod);
     }
   }
@@ -791,6 +805,11 @@ void setup()
   digitalWrite(kNightLightPin, LOW);
 
   gStateMutex = xSemaphoreCreateMutex();
+  if (gStateMutex == nullptr)
+  {
+    Serial.println("FATAL: failed to create state mutex");
+    abort();
+  }
 
   gMqttClient.setServer(ITCS_MQTT_HOST, ITCS_MQTT_PORT);
   gMqttClient.setCallback(mqttCallback);
@@ -798,11 +817,31 @@ void setup()
   gMqttClient.setKeepAlive(5);
   gWiFiClient.setTimeout(kWifiClientTimeoutMs);
 
-  xTaskCreatePinnedToCore(sensorTask, "sensorTask", 4096, nullptr, 3, nullptr, 1);
-  xTaskCreatePinnedToCore(controlTask, "controlTask", 4096, nullptr, 4, nullptr, 1);
-  xTaskCreatePinnedToCore(actuatorTask, "actuatorTask", 4096, nullptr, 3, nullptr, 1);
-  xTaskCreatePinnedToCore(mqttTask, "mqttTask", 6144, nullptr, 2, nullptr, 0);
-  xTaskCreatePinnedToCore(telemetryTask, "telemetryTask", 6144, nullptr, 2, nullptr, 0);
+  if (xTaskCreatePinnedToCore(sensorTask, "sensorTask", 4096, nullptr, 3, &gSensorTaskHandle, 1) != pdPASS)
+  {
+    Serial.println("FATAL: sensorTask creation failed");
+    abort();
+  }
+  if (xTaskCreatePinnedToCore(controlTask, "controlTask", 4096, nullptr, 4, &gControlTaskHandle, 1) != pdPASS)
+  {
+    Serial.println("FATAL: controlTask creation failed");
+    abort();
+  }
+  if (xTaskCreatePinnedToCore(actuatorTask, "actuatorTask", 4096, nullptr, 3, &gActuatorTaskHandle, 1) != pdPASS)
+  {
+    Serial.println("FATAL: actuatorTask creation failed");
+    abort();
+  }
+  if (xTaskCreatePinnedToCore(mqttTask, "mqttTask", 6144, nullptr, 2, &gMqttTaskHandle, 0) != pdPASS)
+  {
+    Serial.println("FATAL: mqttTask creation failed");
+    abort();
+  }
+  if (xTaskCreatePinnedToCore(telemetryTask, "telemetryTask", 6144, nullptr, 2, &gTelemetryTaskHandle, 0) != pdPASS)
+  {
+    Serial.println("FATAL: telemetryTask creation failed");
+    abort();
+  }
 }
 
 void loop()

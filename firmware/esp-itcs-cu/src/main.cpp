@@ -299,7 +299,7 @@ namespace
     }
 
     const uint32_t now = millis();
-    if (now - gLastWiFiRetryMs < 5000)
+    if (now - gLastWiFiRetryMs < 2000)
     {
       return;
     }
@@ -317,7 +317,7 @@ namespace
     }
 
     const uint32_t now = millis();
-    if (now - gLastMqttRetryMs < 3000)
+    if (now - gLastMqttRetryMs < 2000)
     {
       return;
     }
@@ -351,6 +351,8 @@ namespace
       gMqttClient.publish(kAvailabilityTopic, onlinePayload, true);
     }
     gMqttClient.subscribe(kCommandTopic, 1);
+
+    gPublished = {-1, -1, -1, -1, -1, -1, -1, -1, -1, false, false, false, false};
   }
 
   const char *crossingStateToText(CrossingState state)
@@ -467,7 +469,7 @@ namespace
       return false;
     }
 
-    return gMqttClient.publish(kStateTopic, payload, false);
+    return gMqttClient.publish(kStateTopic, payload, true);
   }
 
   void sensorTask(void * /*unused*/)
@@ -859,12 +861,14 @@ void setup()
   gMqttClient.setServer(ITCS_MQTT_HOST, ITCS_MQTT_PORT);
   gMqttClient.setCallback(mqttCallback);
   gMqttClient.setBufferSize(768);
+  gMqttClient.setKeepAlive(5);
+  gWiFiClient.setTimeout(2000);
 
   xTaskCreatePinnedToCore(sensorTask, "sensorTask", 4096, nullptr, 3, nullptr, 1);
   xTaskCreatePinnedToCore(controlTask, "controlTask", 4096, nullptr, 4, nullptr, 1);
   xTaskCreatePinnedToCore(actuatorTask, "actuatorTask", 4096, nullptr, 3, nullptr, 1);
   xTaskCreatePinnedToCore(mqttTask, "mqttTask", 6144, nullptr, 2, nullptr, 0);
-  xTaskCreatePinnedToCore(telemetryTask, "telemetryTask", 6144, nullptr, 1, nullptr, 0);
+  xTaskCreatePinnedToCore(telemetryTask, "telemetryTask", 6144, nullptr, 2, nullptr, 0);
 }
 
 void loop()

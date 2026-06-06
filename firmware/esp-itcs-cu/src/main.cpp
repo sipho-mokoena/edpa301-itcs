@@ -12,22 +12,7 @@
 #include "servo_feedback_driver.h"
 #include "ultrasonic_driver.h"
 #include "warnings_driver.h"
-
-#ifndef ITCS_WIFI_SSID
-#define ITCS_WIFI_SSID "ARMLab-ThinkStation"
-#endif
-
-#ifndef ITCS_WIFI_PASSWORD
-#define ITCS_WIFI_PASSWORD "ArmDut2026"
-#endif
-
-#ifndef ITCS_MQTT_HOST
-#define ITCS_MQTT_HOST "0.tcp.sa.ngrok.io"
-#endif
-
-#ifndef ITCS_MQTT_PORT
-#define ITCS_MQTT_PORT 16261
-#endif
+#include "secrets.h"
 
 namespace
 {
@@ -196,20 +181,6 @@ namespace
 
   bool buildAvailabilityPayload(const char *status, char *payload, size_t payloadSize);
 
-  bool containsIgnoreCase(const char *value, const char *needle)
-  {
-    if (!value || !needle)
-    {
-      return false;
-    }
-
-    String haystack(value);
-    haystack.toUpperCase();
-    String token(needle);
-    token.toUpperCase();
-    return haystack.indexOf(token) >= 0;
-  }
-
   int debounceIrReading(int channelIndex, int rawValue)
   {
     if (channelIndex < 0 || channelIndex >= 3)
@@ -255,7 +226,7 @@ namespace
       return;
     }
 
-    if (containsIgnoreCase(buffer, "RESET_FAULT"))
+    if (strcmp(buffer, "RESET_FAULT") == 0)
     {
       gControl.faultActive = false;
       if (gControl.crossingState == CrossingState::fault)
@@ -263,26 +234,24 @@ namespace
         gControl.crossingState = CrossingState::idle;
       }
     }
-
-    if (containsIgnoreCase(buffer, "AUTO"))
+    else if (strcmp(buffer, "AUTO") == 0)
     {
       gControl.remoteGateMode = RemoteGateMode::autoMode;
       gControl.remoteWarningOverride = -1;
     }
-    else if (containsIgnoreCase(buffer, "GATE_OPEN"))
+    else if (strcmp(buffer, "GATE_OPEN") == 0)
     {
       gControl.remoteGateMode = RemoteGateMode::forceOpen;
     }
-    else if (containsIgnoreCase(buffer, "GATE_CLOSE"))
+    else if (strcmp(buffer, "GATE_CLOSE") == 0)
     {
       gControl.remoteGateMode = RemoteGateMode::forceClosed;
     }
-
-    if (containsIgnoreCase(buffer, "WARN_ON"))
+    else if (strcmp(buffer, "WARN_ON") == 0)
     {
       gControl.remoteWarningOverride = 1;
     }
-    else if (containsIgnoreCase(buffer, "WARN_OFF"))
+    else if (strcmp(buffer, "WARN_OFF") == 0)
     {
       gControl.remoteWarningOverride = 0;
     }

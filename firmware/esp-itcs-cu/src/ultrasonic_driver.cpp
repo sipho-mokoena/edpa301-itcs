@@ -1,6 +1,7 @@
 #include "ultrasonic_driver.h"
 
 #include <Arduino.h>
+#include <driver/gpio.h>
 
 namespace {
 constexpr int kSensorCount = 3;
@@ -8,7 +9,7 @@ constexpr unsigned long kMinPulseDurationUs = 100;
 constexpr float kSpeedOfSoundFactor = 58.0f;
 
 int triggerPin = -1;
-int echoPins[kSensorCount] = {-1, -1, -1};
+volatile int echoPins[kSensorCount] = {-1, -1, -1};
 
 volatile unsigned long startTimes[kSensorCount] = {0, 0, 0};
 volatile unsigned long latestTravelTimes[kSensorCount] = {0, 0, 0};
@@ -17,7 +18,7 @@ volatile bool cyclePulseCompleted[kSensorCount] = {false, false, false};
 
 void IRAM_ATTR handleEchoInterrupt(int sensorIndex) {
   const int echoPin = echoPins[sensorIndex];
-  if (digitalRead(echoPin) == HIGH) {
+  if (gpio_get_level(static_cast<gpio_num_t>(echoPin)) == 1) {
     startTimes[sensorIndex] = micros();
     return;
   }

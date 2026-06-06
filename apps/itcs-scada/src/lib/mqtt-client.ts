@@ -2,13 +2,21 @@ import mqtt, { type MqttClient } from "mqtt";
 
 import { useScadaDataStore, type StatusTone } from "~/stores/scada-data";
 
-const brokerUrl = import.meta.env.VITE_MQTT_BROKER_URL ?? "ws://localhost:8888";
-const clientId =
+const envBrokerUrl = import.meta.env.VITE_MQTT_BROKER_URL ?? "ws://localhost:8888";
+const envClientId =
   import.meta.env.VITE_MQTT_CLIENT_ID ?? `itcs-scada-${Math.random().toString(16).slice(2, 10)}`;
-const telemetryTopic = import.meta.env.VITE_MQTT_TOPIC_TELEMETRY ?? "itcs/cu/telemetry";
-const commandTopic = import.meta.env.VITE_MQTT_TOPIC_COMMANDS ?? "itcs/cu/commands";
+const envTelemetryTopic = import.meta.env.VITE_MQTT_TOPIC_TELEMETRY ?? "itcs/cu/telemetry";
+const envCommandTopic = import.meta.env.VITE_MQTT_TOPIC_COMMANDS ?? "itcs/cu/commands";
+const envStateTopic = import.meta.env.VITE_MQTT_TOPIC_STATE ?? "itcs/cu/state";
 
 let client: MqttClient | null = null;
+let activeConfig: {
+  brokerUrl: string;
+  clientId: string;
+  telemetryTopic: string;
+  commandTopic: string;
+  stateTopic: string;
+} | null = null;
 
 function toTone(value: string): StatusTone {
   const normalized = value.toLowerCase();
@@ -103,10 +111,41 @@ function handleCommand(rawPayload: string) {
   });
 }
 
+function handleState(rawPayload: string) {
+  const payload = safeJsonParse(rawPayload);
+
+  if (!payload) {
+    return;
+  }
+
+  const state = typeof payload.state === "string" ? payload.state : "UNKNOWN";
+  const fault = payload.fault === 1 || payload.fault === true;
+
+  useScadaDataStore.getState().setCloudStatus({
+    syncStatus: `State ${state}${fault ? " (FAULT)" : ""} ${new Date().toLocaleTimeString()}`,
+  });
+}
+
 export function startMqttClient() {
   if (typeof window === "undefined" || client) {
     return;
   }
+
+  const state = useScadaDataStore.getState();
+  const storeConfig = state.mqtt;
+  const brokerUrl = storeConfig.brokerUrl || envBrokerUrl;
+  const clientId = storeConfig.clientId || envClientId;
+  const telemetryTopic = storeConfig.telemetryTopic || envTelemetryTopic;
+  const commandTopic = storeConfig.commandTopic || envCommandTopic;
+  const stateTopic = storeConfig.stateTopic || envStateTopic;
+
+  activeConfig = {
+    brokerUrl,
+    clientId,
+    telemetryTopic,
+    commandTopic,
+    stateTopic,
+  };
 
   client = mqtt.connect(brokerUrl, { clientId });
 
@@ -119,7 +158,7 @@ export function startMqttClient() {
       syncStatus: "MQTT connected",
     });
 
-    client?.subscribe([telemetryTopic, commandTopic]);
+    client?.subscribe([telemetryTopic, commandTopic, stateTopic]);
   });
 
   client.on("reconnect", () => {
@@ -140,6 +179,10 @@ export function startMqttClient() {
 
   client.on("message", (topic, payload) => {
     const rawPayload = payload.toString();
+    useScadaDataStore.getState().pushMqttFeedMessage({
+      topic,
+      payload: rawPayload,
+    });
 
     if (topic === telemetryTopic) {
       handleTelemetry(rawPayload);
@@ -148,6 +191,11 @@ export function startMqttClient() {
 
     if (topic === commandTopic) {
       handleCommand(rawPayload);
+      return;
+    }
+
+    if (topic === stateTopic) {
+      handleState(rawPayload);
     }
   });
 }
@@ -159,6 +207,7 @@ export function stopMqttClient() {
 
   client.end(true);
   client = null;
+  activeConfig = null;
 
   useScadaDataStore.getState().setCloudStatus({
     apiConnection: "OFFLINE",
@@ -166,6 +215,26 @@ export function stopMqttClient() {
     syncStatus: "MQTT disconnected",
     activeCommands: 0,
   });
+}
+
+export function restartMqttClient() {
+  stopMqttClient();
+  startMqttClient();
+}
+
+export function getMqttRuntimeConfig() {
+  if (activeConfig) {
+    return activeConfig;
+  }
+
+  const storeConfig = useScadaDataStore.getState().mqtt;
+  return {
+    brokerUrl: storeConfig.brokerUrl || envBrokerUrl,
+    clientId: storeConfig.clientId || envClientId,
+    telemetryTopic: storeConfig.telemetryTopic || envTelemetryTopic,
+    commandTopic: storeConfig.commandTopic || envCommandTopic,
+    stateTopic: storeConfig.stateTopic || envStateTopic,
+  };
 }
 
 export function publishCommand(command: string) {

@@ -264,6 +264,59 @@
   background-size: 32px 32px;
 }
 
+/* ── Scene Animations ─────────────────────────────────────────── */
+
+@keyframes scene-glow-red {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px #c53d3d) drop-shadow(0 0 6px #c53d3d);
+  }
+  50% {
+    filter: drop-shadow(0 0 6px #ff4444) drop-shadow(0 0 12px #ff4444);
+  }
+}
+
+@keyframes scene-line-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -14;
+  }
+}
+
+@keyframes scene-cpu-pulse {
+  0%,
+  100% {
+    fill: #209324;
+  }
+  50% {
+    fill: #c53d3d;
+  }
+}
+
+.scene-glow-red {
+  animation: scene-glow-red 1s ease-in-out infinite;
+}
+
+.scene-line-flow {
+  animation: scene-line-flow 0.5s linear infinite;
+}
+
+.scene-cpu-fault {
+  animation: scene-cpu-pulse 0.8s ease-in-out infinite;
+}
+
+.scene-gate-closed {
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+
+.scene-gate-open {
+  opacity: 0.15;
+  transition: opacity 0.3s;
+}
+
 .scada-dockview.dockview-theme-dark .scada-scene-grid {
   background-image:
     linear-gradient(rgb(255 255 255 / 12%) 1px, transparent 1px),

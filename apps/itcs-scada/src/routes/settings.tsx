@@ -77,11 +77,36 @@ function getServiceStatusClass(status: string) {
   return "border-muted-foreground/30 bg-muted text-muted-foreground";
 }
 
+const SETTINGS_KEY = "scada-settings";
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
+function saveSettings(values: Record<string, unknown>) {
+  try {
+    const existing = loadSettings();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...existing, ...values }));
+  } catch {
+    /* ignore */
+  }
+}
+
 function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const [apiBaseUrl, setApiBaseUrl] = useState("http://localhost:3000");
-  const [healthPath, setHealthPath] = useState("/health");
-  const [checkIntervalSeconds, setCheckIntervalSeconds] = useState(30);
+  const [apiBaseUrl, setApiBaseUrl] = useState(
+    () => loadSettings().apiBaseUrl ?? "http://localhost:3000",
+  );
+  const [healthPath, setHealthPath] = useState(() => loadSettings().healthPath ?? "/health");
+  const [checkIntervalSeconds, setCheckIntervalSeconds] = useState(
+    () => loadSettings().checkIntervalSeconds ?? 30,
+  );
   const [healthState, setHealthState] = useState<HealthState>("idle");
   const [reportedServiceStatuses, setReportedServiceStatuses] = useState<Record<string, string>>({
     database: "Unknown",

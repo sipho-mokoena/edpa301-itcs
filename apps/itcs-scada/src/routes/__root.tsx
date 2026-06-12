@@ -50,7 +50,7 @@ export const Route = createRootRoute({
 const navItems = [
   {
     to: "/",
-    label: "SCADA",
+    label: "Dashboard",
     icon: LayoutDashboard,
     exact: true,
   },
@@ -122,11 +122,7 @@ function ClerkThemeProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ClerkProvider
-      appearance={appearance}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-    >
+    <ClerkProvider appearance={appearance} signInUrl="/sign-in" signUpUrl="/sign-up">
       {children}
     </ClerkProvider>
   );
@@ -156,12 +152,14 @@ function AppShell() {
   if (!isSignedIn) {
     return (
       <TooltipProvider>
-        <div className="flex min-h-dvh flex-col bg-background text-foreground">
-          <SignedOutRedirect />
-          <div className="flex flex-1 flex-col">
-            <main className="flex flex-1 items-center justify-center p-4 h-full">
-              <Outlet />
-            </main>
+        <div className="relative flex min-h-dvh flex-col text-foreground">
+          <div className="relative z-10 flex min-h-dvh flex-col">
+            <SignedOutRedirect />
+            <div className="flex flex-1 flex-col">
+              <main className="flex h-full flex-1 items-center justify-center p-4">
+                <Outlet />
+              </main>
+            </div>
           </div>
         </div>
       </TooltipProvider>
@@ -170,68 +168,70 @@ function AppShell() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-dvh flex-col bg-background text-foreground">
-        <SignedInRedirect />
-        <header className="border-b border-border bg-sidebar px-3 py-2 md:px-4">
-          <div className="flex items-center justify-between gap-2">
-            <img
-              src={isDarkTheme ? "/dut-logo-dark.png" : "/dut-logo-light.png"}
-              alt="Logo"
-              className="h-6 w-16"
-            />
-            <span className="text-sm font-semibold">EDPA301 GRP17</span>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="gap-2"
-                onClick={() => {
-                  setTheme(isDarkTheme ? "light" : "dark");
-                }}
-              >
-                {isDarkTheme ? <Sun /> : <Moon />}
-              </Button>
-            </div>
-          </div>
-        </header>
-        <div className="grid min-h-0 flex-1 grid-cols-[4.45rem_1fr]">
-          <aside className="border-r border-border bg-sidebar">
-            <nav className="h-full flex flex-col items-center gap-2">
-              {navItems.map(({ to, label, icon: Icon, exact }) => {
-                const isActive = exact ? pathname === to : pathname.startsWith(to);
-
-                return (
-                  <Tooltip key={to}>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          type="button"
-                          size="default"
-                          className="h-16 w-18 [&_svg:not([class*='size-'])]:size-5 flex-col items-center justify-center rounded-md p-0 data-[state=open]:bg-secondary"
-                          variant={isActive ? "default" : "ghost"}
-                          aria-label={label}
-                          onClick={() => {
-                            void navigate({ to });
-                          }}
-                        >
-                          <Icon /> <span>{label}</span>
-                        </Button>
-                      }
-                    />
-                    <TooltipContent side="right">{label}</TooltipContent>
-                  </Tooltip>
-                );
-              })}
-              <div className="mt-auto mb-4">
-                <UserButton />
+      <div className="relative flex h-dvh flex-col text-foreground">
+        <div className="relative z-10 flex h-dvh flex-col">
+          <SignedInRedirect />
+          <header className="border-b border-border bg-sidebar px-3 py-2 md:px-4">
+            <div className="flex items-center justify-between gap-2">
+              <img
+                src={isDarkTheme ? "/dut-logo-dark.png" : "/dut-logo-light.png"}
+                alt="Logo"
+                className="h-6 w-16"
+              />
+              <span className="text-sm font-semibold">EDPA301 GRP17</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="gap-2"
+                  onClick={() => {
+                    setTheme(isDarkTheme ? "light" : "dark");
+                  }}
+                >
+                  {isDarkTheme ? <Sun /> : <Moon />}
+                </Button>
               </div>
-            </nav>
-          </aside>
-          <div className="flex min-h-0 flex-col">
-            <main className="min-h-0 flex-1 overflow-y-auto">
-              <Outlet />
-            </main>
-            <AppFooter />
+            </div>
+          </header>
+          <div className="grid min-h-0 flex-1 grid-cols-[4.45rem_1fr]">
+            <aside className="border-r border-border bg-sidebar">
+              <nav className="h-full flex flex-col items-center gap-2">
+                {navItems.map(({ to, label, icon: Icon, exact }) => {
+                  const isActive = exact ? pathname === to : pathname.startsWith(to);
+
+                  return (
+                    <Tooltip key={to}>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            size="default"
+                            className="h-16 w-18 [&_svg:not([class*='size-'])]:size-5 flex-col items-center justify-center rounded-md p-0 data-[state=open]:bg-secondary"
+                            variant={isActive ? "default" : "ghost"}
+                            aria-label={label}
+                            onClick={() => {
+                              void navigate({ to });
+                            }}
+                          >
+                            <Icon /> <span>{label}</span>
+                          </Button>
+                        }
+                      />
+                      <TooltipContent side="right">{label}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                <div className="mb-4 mt-auto">
+                  <UserButton />
+                </div>
+              </nav>
+            </aside>
+            <div className="flex min-h-0 flex-col">
+              <main className="min-h-0 flex-1 overflow-y-auto">
+                <Outlet />
+              </main>
+              <AppFooter />
+            </div>
           </div>
         </div>
       </div>

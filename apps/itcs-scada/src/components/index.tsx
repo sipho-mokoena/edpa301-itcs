@@ -16,14 +16,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import PowerSourceScadaSceneSvg, { PowerPath } from "~/components/graphics/power-source-scene";
-import LevelCrossingSceneSvg from "~/components/graphics/level-crossing-scene";
+
+import DigitalTwinSceneSvg from "~/components/graphics/new-digital-twin";
 import { useTheme } from "~/providers/theme";
 import { useScadaDataStore } from "~/stores/scada-data";
 import { useScadaUiStore } from "~/stores/scada-ui";
+import { publishCommand } from "~/lib/mqtt-client";
 
 type ScadaPanelParams = {
-  kind: "status" | "scene" | "power" | "controls" | "camera" | "telementry";
+  kind: "status" | "scene" | "controls" | "camera" | "telementry";
 };
 
 type PanelConfig = AddPanelOptions<ScadaPanelParams> & { title: string };
@@ -84,21 +85,7 @@ const CAMERA_PANEL_CONFIG: PanelConfig = {
   },
 };
 
-const POWER_PANEL_CONFIG: PanelConfig = {
-  id: "power-panel",
-  title: "POWER SUPPLY STATUS",
-  component: "panel",
-  params: { kind: "power" },
-  floating: {
-    width: 300,
-    height: 300,
-    x: 48,
-    y: 59,
-  },
-  minimumWidth: 320,
-};
-
-const ALL_PANEL_CONFIGS = [...PANEL_CONFIGS, CAMERA_PANEL_CONFIG, POWER_PANEL_CONFIG];
+const ALL_PANEL_CONFIGS = [...PANEL_CONFIGS, CAMERA_PANEL_CONFIG];
 
 function getToneBadgeVariant(tone: "ok" | "warn" | "danger" | "neutral") {
   if (tone === "ok") return "default" as const;
@@ -219,16 +206,12 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
   const selectedSiteId = useScadaDataStore((state) => state.selectedSiteId);
   const selectedFeedId = useScadaDataStore((state) => state.selectedFeedId);
   const cameraFeeds = useScadaDataStore((state) => state.cameraFeeds);
-  const powerUnits = useScadaDataStore((state) => state.powerUnits);
   const feed = cameraFeeds.find((cameraFeed) => cameraFeed.id === selectedFeedId) ?? null;
-  const selectedPowerUnit = powerUnits.find((powerUnit) => powerUnit.siteId === selectedSiteId);
   const controls = useScadaDataStore((state) => state.controls);
   const cloud = useScadaDataStore((state) => state.cloud);
   const mqttFeed = useScadaDataStore((state) => state.mqttFeed);
   const clearMqttFeed = useScadaDataStore((state) => state.clearMqttFeed);
-  const { theme } = useTheme();
   const [cameraDateTime, setCameraDateTime] = useState(() => new Date());
-  const [activePowerPath, setActivePowerPath] = useState<PowerPath>("mains");
 
   useEffect(() => {
     if (kind !== "camera") {
@@ -244,33 +227,10 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
     };
   }, [kind]);
 
-  useEffect(() => {
-    if (kind !== "power") {
-      return;
-    }
-
-    if (!selectedPowerUnit) {
-      setActivePowerPath("mains");
-      return;
-    }
-
-    if (selectedPowerUnit.relayPath === "mains") {
-      setActivePowerPath("mains");
-      return;
-    }
-
-    if (selectedPowerUnit.solarBatteryAvailable) {
-      setActivePowerPath("solar");
-      return;
-    }
-
-    setActivePowerPath("battery");
-  }, [kind, selectedPowerUnit]);
-
   if (kind === "scene") {
     return (
       <div className="h-full w-full relative overflow-hidden">
-        <LevelCrossingSceneSvg className="h-full w-full" />
+        <DigitalTwinSceneSvg className="h-full w-full" />
       </div>
     );
   }
@@ -332,51 +292,16 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
     return <StatusPaneView />;
   }
 
-  if (kind === "power") {
-    if (!selectedSiteId || !selectedPowerUnit) {
-      return (
-        <div className="h-full w-full flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
-          Select a site in Cloud Configuration
-        </div>
-      );
-    }
-
-    return (
-      <div className="h-full w-full overflow-y-auto ">
-        <div className="max-w-full m-2 p-2 border border-border bg-black/40 dark:bg-white/10">
-          <PowerSourceScadaSceneSvg
-            isDark={theme === "dark"}
-            activePath={activePowerPath}
-            className="h-full w-full"
-          />
-        </div>
-        <Card className="m-2">
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-2">
-              <span>Mains Supply</span>
-              <Badge variant={selectedPowerUnit.mainsAvailable ? "default" : "outline"}>
-                {selectedPowerUnit.mainsAvailable ? "AVAILABLE" : "UNAVAILABLE"}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span>Solar Battery Pack</span>
-              <Badge variant={selectedPowerUnit.solarBatteryAvailable ? "default" : "outline"}>
-                {selectedPowerUnit.solarBatteryAvailable ? "AVAILABLE" : "UNAVAILABLE"}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span>Relay Input</span>
-              <Badge variant="secondary">
-                {selectedPowerUnit.relayPath === "mains" ? "MAINS" : "SOLAR BATTERY"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (kind === "controls") {
+    const commandMap: Record<string, string> = {
+      "reset-fault": "RESET_FAULT",
+      auto: "AUTO",
+      "gate-open": "GATE_OPEN",
+      "gate-close": "GATE_CLOSE",
+      "warn-on": "WARN_ON",
+      "warn-off": "WARN_OFF",
+    };
+
     return (
       <div className="h-full w-full p-2 space-y-2">
         <Card>
@@ -393,6 +318,7 @@ const Panel = (props: IDockviewPanelProps<ScadaPanelParams>) => {
                       : "default"
                 }
                 className="w-full"
+                onClick={() => publishCommand(commandMap[control.id] ?? control.id)}
               >
                 {control.label}
               </Button>
@@ -468,93 +394,84 @@ const components = {
 };
 
 const DEFAULT_LAYOUT = {
-    "state": {
-        "theme": "dark",
-        "closedPanelIds": [
-            "camera-panel",
-            "power-panel"
-        ],
-        "dockviewLayout": {
-            "grid": {
-                "root": {
-                    "type": "branch",
-                    "data": [
-                        {
-                            "type": "leaf",
-                            "data": {
-                                "views": [
-                                    "scene-panel"
-                                ],
-                                "activeView": "scene-panel",
-                                "id": "1"
-                            },
-                            "size": 1320
-                        },
-                        {
-                            "type": "branch",
-                            "data": [
-                                {
-                                    "type": "leaf",
-                                    "data": {
-                                        "views": [
-                                            "status-panel"
-                                        ],
-                                        "activeView": "status-panel",
-                                        "id": "2"
-                                    },
-                                    "size": 445
-                                },
-                                {
-                                    "type": "leaf",
-                                    "data": {
-                                        "views": [
-                                            "controls-panel"
-                                        ],
-                                        "activeView": "controls-panel",
-                                        "id": "3"
-                                    },
-                                    "size": 445
-                                }
-                            ],
-                            "size": 529
-                        }
-                    ],
-                    "size": 890
-                },
-                "width": 1849,
-                "height": 890,
-                "orientation": "HORIZONTAL"
+  state: {
+    theme: "dark",
+    closedPanelIds: ["camera-panel"],
+    dockviewLayout: {
+      grid: {
+        root: {
+          type: "branch",
+          data: [
+            {
+              type: "leaf",
+              data: {
+                views: ["scene-panel"],
+                activeView: "scene-panel",
+                id: "1",
+              },
+              size: 1320,
             },
-            "panels": {
-                "scene-panel": {
-                    "id": "scene-panel",
-                    "contentComponent": "panel",
-                    "params": {
-                        "kind": "scene"
-                    },
-                    "title": "SITE01-ITCS-SCADA"
+            {
+              type: "branch",
+              data: [
+                {
+                  type: "leaf",
+                  data: {
+                    views: ["status-panel"],
+                    activeView: "status-panel",
+                    id: "2",
+                  },
+                  size: 445,
                 },
-                "status-panel": {
-                    "id": "status-panel",
-                    "contentComponent": "panel",
-                    "params": {
-                        "kind": "status"
-                    },
-                    "title": "SENSORS AND ACTUATORS"
+                {
+                  type: "leaf",
+                  data: {
+                    views: ["controls-panel"],
+                    activeView: "controls-panel",
+                    id: "3",
+                  },
+                  size: 445,
                 },
-                "controls-panel": {
-                    "id": "controls-panel",
-                    "contentComponent": "panel",
-                    "params": {
-                        "kind": "controls"
-                    },
-                    "title": "MANUAL CONTROLS"
-                }
+              ],
+              size: 529,
             },
-            "activeGroup": "2"
-        }
+          ],
+          size: 890,
+        },
+        width: 1849,
+        height: 890,
+        orientation: "HORIZONTAL",
+      },
+      panels: {
+        "scene-panel": {
+          id: "scene-panel",
+          contentComponent: "panel",
+          params: {
+            kind: "scene",
+          },
+          title: "SITE01-ITCS-SCADA",
+        },
+        "status-panel": {
+          id: "status-panel",
+          contentComponent: "panel",
+          params: {
+            kind: "status",
+          },
+          title: "SENSORS AND ACTUATORS",
+        },
+        "controls-panel": {
+          id: "controls-panel",
+          contentComponent: "panel",
+          params: {
+            kind: "controls",
+          },
+          title: "MANUAL CONTROLS",
+        },
+      },
+      activeGroup: "2",
     },
-    "version": 0
+  },
+  version: 0,
 };
 
 export default function ScadaLayout() {

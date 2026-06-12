@@ -8,6 +8,8 @@ const envClientId =
 const envTelemetryTopic = import.meta.env.VITE_MQTT_TOPIC_TELEMETRY ?? "itcs/cu/telemetry";
 const envCommandTopic = import.meta.env.VITE_MQTT_TOPIC_COMMANDS ?? "itcs/cu/commands";
 const envStateTopic = import.meta.env.VITE_MQTT_TOPIC_STATE ?? "itcs/cu/state";
+const envAvailabilityTopic = import.meta.env.VITE_MQTT_TOPIC_AVAILABILITY ?? "itcs/cu/availability";
+const envAckTopic = import.meta.env.VITE_MQTT_TOPIC_ACK ?? "itcs/cu/ack";
 
 let client: MqttClient | null = null;
 let activeConfig: {
@@ -16,6 +18,8 @@ let activeConfig: {
   telemetryTopic: string;
   commandTopic: string;
   stateTopic: string;
+  availabilityTopic: string;
+  ackTopic: string;
 } | null = null;
 
 function toTone(value: string): StatusTone {
@@ -95,7 +99,7 @@ function handleTelemetry(rawPayload: string) {
   }
 }
 
-function handleCommand(rawPayload: string) {
+function handleAck(rawPayload: string) {
   const payload = safeJsonParse(rawPayload);
 
   if (!payload) {
@@ -103,11 +107,28 @@ function handleCommand(rawPayload: string) {
   }
 
   const command = typeof payload.command === "string" ? payload.command : "UNKNOWN";
+  const status = typeof payload.status === "string" ? payload.status : "ok";
 
   useScadaDataStore.getState().setCloudStatus({
     activeCommands: 1,
     remoteOverride: command,
-    syncStatus: `Command ${command} at ${new Date().toLocaleTimeString()}`,
+    syncStatus: `ACK ${command}=${status} at ${new Date().toLocaleTimeString()}`,
+  });
+}
+
+function handleAvailability(rawPayload: string) {
+  const payload = safeJsonParse(rawPayload);
+
+  if (!payload) {
+    return;
+  }
+
+  const status = typeof payload.status === "string" ? payload.status : "UNKNOWN";
+
+  useScadaDataStore.getState().setCloudStatus({
+    apiConnection: status === "ONLINE" ? "SECURE" : "OFFLINE",
+    apiConnectionTone: status === "ONLINE" ? "ok" : "warn",
+    syncStatus: `CU ${status} at ${new Date().toLocaleTimeString()}`,
   });
 }
 
@@ -138,6 +159,8 @@ export function startMqttClient() {
   const telemetryTopic = storeConfig.telemetryTopic || envTelemetryTopic;
   const commandTopic = storeConfig.commandTopic || envCommandTopic;
   const stateTopic = storeConfig.stateTopic || envStateTopic;
+  const availabilityTopic = storeConfig.availabilityTopic || envAvailabilityTopic;
+  const ackTopic = storeConfig.ackTopic || envAckTopic;
 
   activeConfig = {
     brokerUrl,
@@ -145,6 +168,8 @@ export function startMqttClient() {
     telemetryTopic,
     commandTopic,
     stateTopic,
+    availabilityTopic,
+    ackTopic,
   };
 
   client = mqtt.connect(brokerUrl, { clientId });
@@ -158,7 +183,7 @@ export function startMqttClient() {
       syncStatus: "MQTT connected",
     });
 
-    client?.subscribe([telemetryTopic, commandTopic, stateTopic]);
+    client?.subscribe([telemetryTopic, stateTopic, availabilityTopic, ackTopic]);
   });
 
   client.on("reconnect", () => {
@@ -189,13 +214,18 @@ export function startMqttClient() {
       return;
     }
 
-    if (topic === commandTopic) {
-      handleCommand(rawPayload);
+    if (topic === stateTopic) {
+      handleState(rawPayload);
       return;
     }
 
-    if (topic === stateTopic) {
-      handleState(rawPayload);
+    if (topic === availabilityTopic) {
+      handleAvailability(rawPayload);
+      return;
+    }
+
+    if (topic === ackTopic) {
+      handleAck(rawPayload);
     }
   });
 }
@@ -234,20 +264,16 @@ export function getMqttRuntimeConfig() {
     telemetryTopic: storeConfig.telemetryTopic || envTelemetryTopic,
     commandTopic: storeConfig.commandTopic || envCommandTopic,
     stateTopic: storeConfig.stateTopic || envStateTopic,
+    availabilityTopic: storeConfig.availabilityTopic || envAvailabilityTopic,
+    ackTopic: storeConfig.ackTopic || envAckTopic,
   };
 }
 
 export function publishCommand(command: string) {
-  if (!client || !client.connected) {
+  if (!client || !client.connected || !activeConfig) {
     return false;
   }
 
-  const payload = JSON.stringify({
-    source: "itcs-scada",
-    command,
-    issuedAt: new Date().toISOString(),
-  });
-
-  client.publish(commandTopic, payload);
+  client.publish(activeConfig.commandTopic, command);
   return true;
 }

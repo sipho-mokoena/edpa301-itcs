@@ -1,9 +1,12 @@
 #include "config.h"
 #include "globals.h"
-#include "mqtt_client.h"
 
 #include <Arduino.h>
+
+#ifndef ITCS_DISABLE_NETWORK
+#include "mqtt_client.h"
 #include <WiFi.h>
+#endif
 
 void telemetryTask(void *)
 {
@@ -23,6 +26,7 @@ void telemetryTask(void *)
       xSemaphoreGive(gStateMutex);
     }
 
+#ifndef ITCS_DISABLE_NETWORK
     if (gMqttClient.connected())
     {
       if (gPublished.irApproach != sensors.irApproach)
@@ -52,14 +56,6 @@ void telemetryTask(void *)
       if (gPublished.usNorth != sensors.usNorth)
       {
         publishTelemetry("sensorId", "ultrasonic.north.vehicle", activeStateText(sensors.usNorth));
-      }
-      if (gPublished.limitSwitch1 != sensors.limitSwitch1)
-      {
-        publishTelemetry("sensorId", "limit.left.closed", activeStateText(sensors.limitSwitch1));
-      }
-      if (gPublished.limitSwitch2 != sensors.limitSwitch2)
-      {
-        publishTelemetry("sensorId", "limit.right.closed", activeStateText(sensors.limitSwitch2));
       }
       if (gPublished.warningsEnabled != actuators.warningsEnabled)
       {
@@ -91,8 +87,6 @@ void telemetryTask(void *)
         gPublished.usSouth = sensors.usSouth;
         gPublished.usIntersection = sensors.usIntersection;
         gPublished.usNorth = sensors.usNorth;
-        gPublished.limitSwitch1 = sensors.limitSwitch1;
-        gPublished.limitSwitch2 = sensors.limitSwitch2;
         gPublished.warningsEnabled = actuators.warningsEnabled;
         gPublished.nightLightEnabled = actuators.nightLightEnabled;
         gPublished.gateClosed = actuators.gateClosed;
@@ -100,9 +94,10 @@ void telemetryTask(void *)
         xSemaphoreGive(gStateMutex);
       }
     }
+#endif
 
     Serial.printf(
-        "state=%s ir=[%d,%d,%d] us=[%d,%d,%d] ldr=%d lim=[%d,%d] gate=%d warn=%d night=%d fault=%d wifi=%d mqtt=%d\n",
+        "state=%s ir=[%d,%d,%d] us=[%d,%d,%d] ldr=%d gate=%d warn=%d night=%d fault=%d\n",
         crossingStateToText(control.crossingState),
         sensors.irApproach,
         sensors.irInside,
@@ -111,22 +106,16 @@ void telemetryTask(void *)
         sensors.usIntersection,
         sensors.usNorth,
         sensors.ldrDark,
-        sensors.limitSwitch1,
-        sensors.limitSwitch2,
         asBinary(actuators.gateClosed),
         asBinary(actuators.warningsEnabled),
         asBinary(actuators.nightLightEnabled),
-        asBinary(control.faultActive),
-        WiFi.status() == WL_CONNECTED ? 1 : 0,
-        gMqttClient.connected() ? 1 : 0);
+        asBinary(control.faultActive));
 
     Serial.printf(
-        "stack: sensor=%u ctrl=%u act=%u mqtt=%u tele=%u\n",
+        "stack: sensor=%u ctrl=%u act=%u\n",
         uxTaskGetStackHighWaterMark(gSensorTaskHandle),
         uxTaskGetStackHighWaterMark(gControlTaskHandle),
-        uxTaskGetStackHighWaterMark(gActuatorTaskHandle),
-        uxTaskGetStackHighWaterMark(gMqttTaskHandle),
-        uxTaskGetStackHighWaterMark(gTelemetryTaskHandle));
+        uxTaskGetStackHighWaterMark(gActuatorTaskHandle));
 
     vTaskDelayUntil(&lastWake, kTelemetryTaskPeriod);
   }

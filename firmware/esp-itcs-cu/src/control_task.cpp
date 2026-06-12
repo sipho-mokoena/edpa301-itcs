@@ -16,7 +16,6 @@ void controlTask(void *)
       const bool approach = gSensors.irApproach == 1;
       const bool inside = gSensors.irInside == 1;
       const bool leaving = gSensors.irLeaving == 1;
-      const bool gateClosedBySwitch = gSensors.limitSwitch1 == 1 && gSensors.limitSwitch2 == 1;
 
       if (gControl.faultActive)
       {
@@ -53,12 +52,11 @@ void controlTask(void *)
           if (leaving && !inside && !approach)
           {
             gControl.crossingState = CrossingState::trainLeaving;
-            gControl.enteredLeavingAtMs = now;
           }
           break;
 
         case CrossingState::trainLeaving:
-          if (!approach && !inside && !leaving && (now - gControl.enteredLeavingAtMs > kLeaveClearMs))
+          if (!approach && !inside && !leaving)
           {
             gControl.crossingState = CrossingState::idle;
           }
@@ -71,8 +69,7 @@ void controlTask(void *)
 
       const bool trainActive =
           gControl.crossingState == CrossingState::trainApproaching ||
-          gControl.crossingState == CrossingState::trainInside ||
-          gControl.crossingState == CrossingState::trainLeaving;
+          gControl.crossingState == CrossingState::trainInside;
 
       bool targetGateClosed = trainActive || gControl.faultActive;
       bool targetWarningsOn = trainActive || gControl.faultActive;
@@ -98,23 +95,10 @@ void controlTask(void *)
         }
       }
 
-      const bool changedGateCommand = (gActuators.gateClosed != targetGateClosed);
       gActuators.gateClosed = targetGateClosed;
       gActuators.warningsEnabled = targetWarningsOn;
       gActuators.nightLightEnabled = gSensors.ldrDark == 1;
       gControl.trainDetected = trainActive;
-
-      if (changedGateCommand)
-      {
-        gActuators.gateCommandedAtMs = now;
-      }
-
-      if (gActuators.gateClosed && !gateClosedBySwitch &&
-          (now - gActuators.gateCommandedAtMs > kGateCloseTimeoutMs))
-      {
-        gControl.faultActive = true;
-        gControl.crossingState = CrossingState::fault;
-      }
 
       xSemaphoreGive(gStateMutex);
     }

@@ -5,31 +5,30 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+// #define ITCS_DISABLE_NETWORK  // uncomment to disable all WiFi/MQTT networking
+
 constexpr char kTelemetryTopic[] = "itcs/cu/telemetry";
 constexpr char kCommandTopic[] = "itcs/cu/commands";
 constexpr char kAckTopic[] = "itcs/cu/ack";
 constexpr char kStateTopic[] = "itcs/cu/state";
 constexpr char kAvailabilityTopic[] = "itcs/cu/availability";
 
-constexpr int kBuzzerPin = 23;
-constexpr int kRedLedPin = 22;
+constexpr int kBuzzerPin = 18;
+constexpr int kRedLedPin = 5;
 constexpr int kServo1Pin = 32;
 constexpr int kServo2Pin = 33;
 constexpr int kUltrasonicTriggerPin = 14;
-constexpr int kUltrasonicEcho1Pin = 26;
-constexpr int kUltrasonicEcho2Pin = 25;
-constexpr int kUltrasonicEcho3Pin = 27;
-constexpr int kIrApproachPin = 9;
-constexpr int kIrInsidePin = 10;
+constexpr int kUltrasonicEcho1Pin = 19;
+constexpr int kUltrasonicEcho2Pin = 22;
+constexpr int kUltrasonicEcho3Pin = 23;
+constexpr int kIrApproachPin = 10;
+constexpr int kIrInsidePin = 9;
 constexpr int kIrLeavingPin = 13;
 constexpr int kLdrDigitalPin = 17;
 constexpr int kNightLightPin = 16;
-constexpr int kLimitSwitch1Pin = 18;
-constexpr int kLimitSwitch2Pin = 19;
-
-constexpr float kObstacleDistanceCm = 12.0f;
-constexpr int kGateOpenAngle = 0;
-constexpr int kGateClosedAngle = 90;
+constexpr float kObstacleDistanceCm = 10.0f;
+constexpr int kGateOpenAngle = 90;
+constexpr int kGateClosedAngle = 0;
 
 constexpr TickType_t kSensorTaskPeriod = pdMS_TO_TICKS(50);
 constexpr TickType_t kControlTaskPeriod = pdMS_TO_TICKS(20);
@@ -38,8 +37,7 @@ constexpr TickType_t kMqttTaskPeriod = pdMS_TO_TICKS(20);
 constexpr TickType_t kTelemetryTaskPeriod = pdMS_TO_TICKS(500);
 
 constexpr uint32_t kApproachTimeoutMs = 5000;
-constexpr uint32_t kLeaveClearMs = 2000;
-constexpr uint32_t kGateCloseTimeoutMs = 7000;
+
 constexpr uint8_t kIrDebounceSamples = 3;
 
 constexpr uint32_t kWifiRetryIntervalMs = 2000;
@@ -74,8 +72,6 @@ struct SensorSnapshot
   int irApproach;
   int irInside;
   int irLeaving;
-  int limitSwitch1;
-  int limitSwitch2;
   int ldrDark;
   int usSouth;
   int usIntersection;
@@ -90,7 +86,6 @@ struct ActuatorState
   bool gateClosed;
   int servo1Angle;
   int servo2Angle;
-  uint32_t gateCommandedAtMs;
 };
 
 struct ControlState
@@ -101,7 +96,6 @@ struct ControlState
   bool faultActive;
   bool trainDetected;
   uint32_t enteredApproachAtMs;
-  uint32_t enteredLeavingAtMs;
 };
 
 struct PublishedCache
@@ -113,8 +107,6 @@ struct PublishedCache
   int usSouth;
   int usIntersection;
   int usNorth;
-  int limitSwitch1;
-  int limitSwitch2;
   bool warningsEnabled;
   bool nightLightEnabled;
   bool gateClosed;

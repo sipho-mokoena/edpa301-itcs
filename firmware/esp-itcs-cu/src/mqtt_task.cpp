@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#ifndef ITCS_DISABLE_NETWORK
+
 void mqttTask(void *)
 {
   TickType_t lastWake = xTaskGetTickCount();
@@ -16,3 +18,5 @@ void mqttTask(void *)
     vTaskDelayUntil(&lastWake, kMqttTaskPeriod);
   }
 }
+
+#endif

@@ -2,7 +2,6 @@
 #include "globals.h"
 
 #include "ir_obstacle_driver.h"
-#include "servo_feedback_driver.h"
 #include "ultrasonic_driver.h"
 
 #include <Arduino.h>
@@ -45,7 +44,6 @@ void sensorTask(void *)
   for (;;)
   {
     updateIrObstacleDriver();
-    updateServoFeedbackDriver();
 
     const uint32_t now = millis();
     if (!gUltrasonicWaitingForEcho && (now - gLastUltrasonicTriggerMs >= kUltrasonicTriggerIntervalMs))
@@ -68,8 +66,6 @@ void sensorTask(void *)
     localSnapshot.irApproach = debounceIrReading(0, rawIrApproach);
     localSnapshot.irInside = debounceIrReading(1, rawIrInside);
     localSnapshot.irLeaving = debounceIrReading(2, rawIrLeaving);
-    localSnapshot.limitSwitch1 = getServoFeedbackDriverState(0);
-    localSnapshot.limitSwitch2 = getServoFeedbackDriverState(1);
     localSnapshot.ldrDark = digitalRead(kLdrDigitalPin) == HIGH ? 1 : 0;
     localSnapshot.usSouth = isUltrasonicDriverObstacleDetected(0, kObstacleDistanceCm) ? 1 : 0;
     localSnapshot.usIntersection = isUltrasonicDriverObstacleDetected(1, kObstacleDistanceCm) ? 1 : 0;

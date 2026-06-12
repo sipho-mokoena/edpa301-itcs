@@ -1,6 +1,8 @@
 #include "mqtt_client.h"
 #include "globals.h"
 
+#ifndef ITCS_DISABLE_NETWORK
+
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include "secrets.h"
@@ -158,7 +160,7 @@ void ensureMqttConnected()
   }
   gMqttClient.subscribe(kCommandTopic, 1);
 
-  gPublished = {-1, -1, -1, -1, -1, -1, -1, -1, -1, false, false, false, false};
+  gPublished = {-1, -1, -1, -1, -1, -1, -1, false, false, false, false};
 }
 
 bool publishTelemetry(const char *elementType, const char *elementId, const char *status)
@@ -201,8 +203,6 @@ bool publishState(const SensorSnapshot &sensors, const ActuatorState &actuators,
   sensorsObj["ultrasonicIntersection"] = sensors.usIntersection;
   sensorsObj["ultrasonicNorth"] = sensors.usNorth;
   sensorsObj["ldrNight"] = sensors.ldrDark;
-  sensorsObj["limitLeftClosed"] = sensors.limitSwitch1;
-  sensorsObj["limitRightClosed"] = sensors.limitSwitch2;
 
   JsonObject actuatorsObj = doc.createNestedObject("actuators");
   actuatorsObj["gateClosed"] = asBinary(actuators.gateClosed);
@@ -218,3 +218,5 @@ bool publishState(const SensorSnapshot &sensors, const ActuatorState &actuators,
 
   return gMqttClient.publish(kStateTopic, payload, true);
 }
+
+#endif
